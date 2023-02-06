@@ -2,7 +2,8 @@
 
 set -ex
 
-if oc get namespace tekton-pipelines > /dev/null 2>&1; then
+# If openshift-pipelines already exists, probably no need to deploy it.
+if oc get namespace openshift-pipelines > /dev/null 2>&1; then
   exit 0
 fi
 
