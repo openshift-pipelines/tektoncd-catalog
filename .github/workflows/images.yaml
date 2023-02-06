@@ -1,0 +1,70 @@
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'
+
+name: build-images
+
+env:
+  REGISTRY: ghcr.io
+  
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.output-images.outputs.images }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: list images
+        id: output-images
+        run: |
+          echo "images=$(ls images | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    needs: list
+    strategy:
+      matrix:
+        image: ${{fromJSON(needs.list.outputs.images)}}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: |
+            images/${{ matrix.image }}/**
+      - name: changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo ${{ steps.changed-files.outputs.any_changed }}
+          echo "List all the files that have changed: ${{ steps.changed-files-specific.outputs.all_changed_files }}"
+      - name: Log in to the Container registry
+        if: steps.changed-files.outputs.any_changed == 'true' || github.event_name != 'pull_request'
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        if: steps.changed-files.outputs.any_changed == 'true' || github.event_name != 'pull_request'
+        id: meta
+        uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
+      - name: Build and push Docker image
+        if: steps.changed-files.outputs.any_changed == 'true' || github.event_name != 'pull_request'
+        uses: docker/build-push-action@c56af957549030174b10d6867f20e78cfd7debc5
+        with:
+          context: images/${{ matrix.image }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
