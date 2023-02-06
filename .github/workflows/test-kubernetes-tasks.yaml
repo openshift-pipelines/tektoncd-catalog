@@ -1,0 +1,29 @@
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'
+
+name: test-tasks
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v3
+    - uses: chainguard-dev/actions/setup-kind@main
+      with:
+        k8s-version: v1.24.x
+    - uses: vdemeester/setup-tektoncd@main
+      with:
+        pipeline: v0.44.x
+        # pipeline-feature-flags: '{"enable-api-fields": "alpha"}'
+    - name: run-tests
+      run: |        
+        kubectl version
+        make test-e2e/kubernetes
