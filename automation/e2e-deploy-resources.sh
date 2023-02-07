@@ -23,22 +23,22 @@ spec:
 EOF
 
 # wait for tekton pipelines
-kubectl rollout status -n openshift-operators deployment/openshift-pipelines-operator --timeout 10m
+oc rollout status -n openshift-operators deployment/openshift-pipelines-operator --timeout 10m
 
 # wait until clustertasks tekton CRD is properly deployed
 timeout 10m bash <<- EOF
-  until kubectl get crd tasks.tekton.dev; do
+  until oc get crd tasks.tekton.dev; do
     sleep 5
   done
 EOF
 
 # wait until tekton pipelines webhook is created
 timeout 10m bash <<- EOF
-  until kubectl get deployment tekton-pipelines-webhook -n openshift-pipelines; do
+  until oc get deployment tekton-pipelines-webhook -n openshift-pipelines; do
     sleep 5
   done
 EOF
 
 # wait until tekton pipelines webhook is online
-kubectl wait -n openshift-pipelines deployment tekton-pipelines-webhook --for condition=Available --timeout 10m
+oc wait -n openshift-pipelines deployment tekton-pipelines-webhook --for condition=Available --timeout 10m
 
