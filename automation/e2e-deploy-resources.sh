@@ -22,6 +22,13 @@ spec:
   sourceNamespace: openshift-marketplace
 EOF
 
+# wait until tekton pipelines operator is created
+timeout 2m bash <<- EOF
+  until oc get deployment openshift-pipelines-operator -n openshift-pipelines; do
+    sleep 5
+  done
+EOF
+
 # wait for tekton pipelines
 oc rollout status -n openshift-operators deployment/openshift-pipelines-operator --timeout 10m
 
@@ -33,7 +40,7 @@ timeout 10m bash <<- EOF
 EOF
 
 # wait until tekton pipelines webhook is created
-timeout 10m bash <<- EOF
+timeout 2m bash <<- EOF
   until oc get deployment tekton-pipelines-webhook -n openshift-pipelines; do
     sleep 5
   done
