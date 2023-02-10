@@ -24,7 +24,7 @@ EOF
 
 # wait until tekton pipelines operator is created
 timeout 2m bash <<- EOF
-  until oc get deployment openshift-pipelines-operator -n openshift-pipelines; do
+  until oc get deployment openshift-pipelines-operator -n openshift-operators; do
     sleep 5
   done
 EOF
