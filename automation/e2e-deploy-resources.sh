@@ -49,3 +49,4 @@ EOF
 # wait until tekton pipelines webhook is online
 oc wait -n openshift-pipelines deployment tekton-pipelines-webhook --for condition=Available --timeout 10m
 
+tkn version
