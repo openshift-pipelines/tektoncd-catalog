@@ -8,19 +8,55 @@ if oc get namespace openshift-pipelines > /dev/null 2>&1; then
 fi
 
 # Deploy Openshift Pipelines
-# TODO: add support for installing nightly long term
+# TODO: add support for installing multiple version long term
+# Make sure openshift allows custom catalog sources (right ?)
+oc patch operatorhub.config.openshift.io/cluster -p='{"spec":{"disableAllDefaultSources":true}}' --type=merge
+sleep 2
+# Add a custom catalog-source
+# FIXME: use the real openshift-pipeline nightly, not mine (vdemeest)
+cat <<EOF | oc apply -f-
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:                      
+  name: custom-osp-nightly
+  namespace: openshift-marketplace         
+spec:                                                                                                                                                                                                                                                
+  sourceType: grpc                     
+  image: quay.io/openshift-pipeline/openshift-pipelines-operator-index:1.10
+  displayName: "Custom OSP Nightly"
+  updateStrategy:
+    registryPoll:
+      interval: 30m                                                                                                                                                                                                                                  
+EOF
+sleep 10
+# Create the "correct" subscription
+oc delete subscription pipelines -n openshift-operators || true
 cat <<EOF | oc apply -f-
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: openshift-pipeline-operator
+  name: openshift-pipelines-operator
   namespace: openshift-operators
 spec:
   channel: latest
   name: openshift-pipelines-operator-rh
-  source: redhat-operators
+  source: custom-osp-nightly
   sourceNamespace: openshift-marketplace
 EOF
+
+# This deploys a released version
+# cat <<EOF | oc apply -f-
+# apiVersion: operators.coreos.com/v1alpha1
+# kind: Subscription
+# metadata:
+#   name: openshift-pipeline-operator
+#   namespace: openshift-operators
+# spec:
+#   channel: latest
+#   name: openshift-pipelines-operator-rh
+#   source: redhat-operators
+#   sourceNamespace: openshift-marketplace
+# EOF
 
 # wait until tekton pipelines operator is created
 timeout 2m bash <<- EOF
