@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-
 set -ex
+
+if [[ "$1" == "kubernetes" ]]; then
+    # No need to do anything for kubernetes 
+    exit 0
+fi
 
 # If openshift-pipelines already exists, probably no need to deploy it.
 if oc get namespace openshift-pipelines > /dev/null 2>&1; then
@@ -85,4 +89,5 @@ EOF
 # wait until tekton pipelines webhook is online
 oc wait -n openshift-pipelines deployment tekton-pipelines-webhook --for condition=Available --timeout 10m
 
+oc version
 tkn version

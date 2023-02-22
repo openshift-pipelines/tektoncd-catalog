@@ -5,12 +5,12 @@ all: help
 .PHONY: test-e2e-openshift
 test-e2e/openshift: test-e2e-openshift
 test-e2e-openshift: ## Run e2e tests on OpenShift.
-	./automation/e2e-tests.sh
+	./automation/e2e-tests.sh openshift
 
 .PHONY: test-e2e/kubernetes test-e2e-kubernetes
 test-e2e/kubernetes: test-e2e-kubernetes
 test-e2e-kubernetes: ## Run e2e tests on Kubernetes.
-	echo "TODO: adapt e2e-tests.sh to work on kind as well"
+	./automation/e2e-tests.sh kubernetes
 
 .PHONY: help
 help:
