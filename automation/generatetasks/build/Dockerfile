@@ -20,7 +20,7 @@ ADD . .
 COPY automation/generatetasks/build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 
-RUN dnf install -y jq make diffutils which git gcc && rm -rf /var/cache/yum /var/cache/dnf
+RUN dnf install -y jq make diffutils which git gcc openssl && rm -rf /var/cache/yum /var/cache/dnf
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
