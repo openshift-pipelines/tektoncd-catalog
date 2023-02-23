@@ -3,7 +3,7 @@
 set -ex
 
 echo "Run e2e tests :)"
-./automation/e2e-deploy-resources.sh $1
+#./automation/e2e-deploy-resources.sh $1
 
 # TODO: handle platform arg
 # TODO: create an actual tool for this

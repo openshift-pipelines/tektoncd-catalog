@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
 set -ex
 
-if [[ "$1" == "kubernetes" ]]; then
-    # No need to do anything for kubernetes 
-    exit 0
-fi
-
 # If openshift-pipelines already exists, probably no need to deploy it.
 if oc get namespace openshift-pipelines > /dev/null 2>&1; then
+  echo "openshift-pipelines namespaces already exists, assuming the cluster has been provisionned already"
   exit 0
 fi
 
 # Deploy Openshift Pipelines
 # TODO: add support for installing multiple version long term
-# Make sure openshift allows custom catalog sources (right ?)
-oc patch operatorhub.config.openshift.io/cluster -p='{"spec":{"disableAllDefaultSources":true}}' --type=merge
-sleep 2
-# Add a custom catalog-source
-# FIXME: use the real openshift-pipeline nightly, not mine (vdemeest)
-cat <<EOF | oc apply -f-
+case "$1" in
+    latest)
+        cat <<EOF | oc apply -f-
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-pipeline-operator
+  namespace: openshift-operators
+spec:
+  channel: latest
+  name: openshift-pipelines-operator-rh
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+EOF
+    ;;
+    nightly)
+        # Make sure openshift allows custom catalog sources (right ?)
+        oc patch operatorhub.config.openshift.io/cluster -p='{"spec":{"disableAllDefaultSources":true}}' --type=merge
+        sleep 2
+        # Add a custom catalog-source
+        # FIXME: use the real openshift-pipeline nightly, not mine (vdemeest)
+        cat <<EOF | oc apply -f-
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:                      
@@ -32,10 +44,10 @@ spec:
     registryPoll:
       interval: 30m                                                                                                                                                                                                                                  
 EOF
-sleep 10
-# Create the "correct" subscription
-oc delete subscription pipelines -n openshift-operators || true
-cat <<EOF | oc apply -f-
+        sleep 10
+        # Create the "correct" subscription
+        oc delete subscription pipelines -n openshift-operators || true
+        cat <<EOF | oc apply -f-
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
@@ -47,20 +59,8 @@ spec:
   source: custom-osp-nightly
   sourceNamespace: openshift-marketplace
 EOF
-
-# This deploys a released version
-# cat <<EOF | oc apply -f-
-# apiVersion: operators.coreos.com/v1alpha1
-# kind: Subscription
-# metadata:
-#   name: openshift-pipeline-operator
-#   namespace: openshift-operators
-# spec:
-#   channel: latest
-#   name: openshift-pipelines-operator-rh
-#   source: redhat-operators
-#   sourceNamespace: openshift-marketplace
-# EOF
+    ;;
+esac
 
 # wait until tekton pipelines operator is created
 timeout 2m bash <<- EOF
