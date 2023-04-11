@@ -1,0 +1,5 @@
+# We need the tkncd-eco-testing namespace installed by default
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: golang-build
