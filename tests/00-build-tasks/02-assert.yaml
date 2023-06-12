@@ -1,0 +1,8 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: example-run
+status:
+  conditions:
+  - status: "True"
+    type: Succeeded

@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: example-run
+spec:
+  taskRef:
+    name: golang-build
+  params:
+  - name: package
+    value: github.com/tektoncd/pipeline
+  workspaces:
+  - name: source
+    persistentVolumeClaim:
+      claimName: my-source

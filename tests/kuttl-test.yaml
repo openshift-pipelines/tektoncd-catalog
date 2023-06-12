@@ -1,0 +1,11 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+name: tektoncd-catalog-tests
+testDirs:
+  - ./tests/
+# suppress:
+#   - events
+timeout: 120
+parallel: 1
+reportFormat: JSON
+reportName: openshift-pipelines-tektoncd-catalog
