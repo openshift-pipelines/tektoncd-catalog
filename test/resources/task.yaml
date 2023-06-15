@@ -1,0 +1,76 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: task
+spec:
+  description: |
+    Task description.
+
+  workspaces:
+    - name: required-workspace
+      description: |
+        Workspace "required-workspace" description.
+    - name: optional-workspace
+      optional: true
+      description: |
+        Workspace "optional-workspace" description.
+
+  params:
+    - name: STRING_PARAM
+      type: string
+      description: |
+        String parameter description.
+    - name: STRING_PARAM_EMPTY
+      type: string
+      default: ""
+      description: |
+        String parameter description.
+    - name: STRING_PARAM_WITH_DEFAULT
+      type: string
+      default: default
+      description: |
+        String parameter description.
+    - name: ARRAY_PARAM
+      type: array
+      description: |
+        Array parameter description.
+    - name: ARRAY_PARAM_EMPTY
+      type: array
+      default: []
+      description: |
+        Array parameter description.
+    - name: ARRAY_PARAM_WITH_DEFAULT
+      type: array
+      default:
+        - entry
+      description: |
+        Array parameter description.
+    - name: OBJECT_PARAM
+      type: object
+      description: |
+        Object parameter description.
+    - name: OBJECT_PARAM_EMPTY
+      type: object
+      properties:
+        key:
+          type: string
+      default:
+        key: ""
+      description: |
+        Object parameter description.
+    - name: OBJECT_PARAM_WITH_DEFAULT
+      type: object
+      properties:
+        key:
+          type: string
+      default:
+        key: value
+      description: |
+        Object parameter description.
+
+
+  results:
+    - name: RESULT
+      description: |
+        Result description.
