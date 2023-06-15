@@ -6,7 +6,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
-name: test-tasks
+name: test-k8s-pipeline-latest
 
 jobs:
   test:
@@ -16,13 +16,19 @@ jobs:
       packages: write
     steps:
     - uses: actions/checkout@v3
-    - uses: chainguard-dev/actions/setup-kind@main
+    # using KinD to provide the Kubernetes instance and kubectl
+    - uses: helm/kind-action@v1.5.0
       with:
-        k8s-version: v1.24.x
-    - uses: vdemeester/setup-tektoncd@main
+        cluster_name: kind
+    # setting up Tekton Pipelines, CLI and additional components...
+    - uses: openshift-pipelines/setup-tektoncd@v1
       with:
-        pipeline: v0.44.x
-        # pipeline-feature-flags: '{"enable-api-fields": "alpha"}'
+        pipeline_version: latest
+        feature_flags: '{}'
+        cli_version: latest
+        setup_registry: "true"
+        patch_etc_hosts: "true"
+      # pipeline-feature-flags: '{"enable-api-fields": "alpha"}'
     - name: run-tests
       run: |        
         kubectl version
