@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: foo-is-bar
+spec:
+  params:
+  - name: param1
+  tasks:
+  - name: echo
+    params:
+    - name: param1
+      value: $(params.param1)
+    taskRef:
+      kind: Task
+      name: echo
