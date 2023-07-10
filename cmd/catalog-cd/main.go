@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/openshift-pipelines/tektoncd-catalog/pkg/catalog-cd/cmd"
+	"github.com/openshift-pipelines/tektoncd-catalog/internal/cmd"
 	tkncli "github.com/tektoncd/cli/pkg/cli"
 )
 
