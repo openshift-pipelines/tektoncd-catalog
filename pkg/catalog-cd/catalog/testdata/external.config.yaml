@@ -1,0 +1,4 @@
+repositories:
+- name: sbr-golang
+  url: https://github.com/shortbrain/golang-tasks
+  types: [ tasks ]

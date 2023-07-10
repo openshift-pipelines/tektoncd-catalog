@@ -20,6 +20,7 @@ func NewRootCmd(stream *tkncli.Stream) *cobra.Command {
 	rootCmd.AddCommand(runner.NewRunner(cfg, NewProbeCmd()).Cmd())
 	rootCmd.AddCommand(runner.NewRunner(cfg, NewRenderCmd()).Cmd())
 	rootCmd.AddCommand(runner.NewRunner(cfg, NewVerifyCmd()).Cmd())
+	rootCmd.AddCommand(runner.NewRunner(cfg, NewGenerateCmd()).Cmd())
 
 	return rootCmd
 }

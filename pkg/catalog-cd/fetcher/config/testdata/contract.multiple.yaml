@@ -1,0 +1,12 @@
+tasks:
+- name: go-crane-image
+  file: go-crane-image.yaml
+  bundle: ghcr.io/shortbrain/golang-tasks/bundle:v0.1.0@sha256:f04df9072cef7c4bbe3a819b42df668493fce6dd2f91a68a5f6da06ccd08e552
+- name: go-ko-image
+  bundle: ghcr.io/shortbrain/golang-tasks/bundle:v0.1.0@sha256:f04df9072cef7c4bbe3a819b42df668493fce6dd2f91a68a5f6da06ccd08e552
+pipelines:
+- name: go-ko
+  file: pipeline-go-ko.yaml
+  tasks:
+  - name: go-ko-image
+    bundle: ghcr.io/shortbrain/golang-tasks/bundle:v0.1.0@sha256:f04df9072cef7c4bbe3a819b42df668493fce6dd2f91a68a5f6da06ccd08e552
