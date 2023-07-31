@@ -18,6 +18,15 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: 1.20.x
+    - name: Fetch Go cache (to speed the process up if possible)
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-golang-
     - name: Generate experimental catalog
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,11 +56,16 @@ jobs:
       run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git status
-          git add experimental
-          git commit -m "Auto-update packages"
-          git pull --rebase --autostash
-          git push
+          CHANGES=$(git status -s)
+            if [[ -n "${CHANGES}" ]]; then
+            git status
+            git add experimental
+            git commit -m "Auto-update packages"
+            git pull --rebase --autostash
+            git push
+          else
+            echo "No changes for the experimental catalog"
+          fi
 
 
 
