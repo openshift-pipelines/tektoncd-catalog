@@ -29,7 +29,7 @@ func TestLoadContractValid(t *testing.T) {
 }
 
 func TestLoadContractInvalid(t *testing.T) {
-	paths, err := filepath.Glob(filepath.Join("testdata", "invalid*.yaml"))
+	paths, err := filepath.Glob(filepath.Join("testdata", "invalid.contract*.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}

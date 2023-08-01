@@ -1,4 +1,4 @@
-version: 0
+version: 50
 tasks:
 - name: git-clone
   file: task-git-0.0.1.yaml
