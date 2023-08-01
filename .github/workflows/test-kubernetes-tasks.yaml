@@ -1,6 +1,6 @@
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, p ]
   push:
     branches: [ main ]
   schedule:

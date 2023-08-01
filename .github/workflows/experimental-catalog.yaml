@@ -57,7 +57,7 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           CHANGES=$(git status -s)
-            if [[ -n "${CHANGES}" ]]; then
+          if [[ -n "${CHANGES}" ]]; then
             git status
             git add experimental
             git commit -m "Auto-update packages"
