@@ -28,7 +28,7 @@ func TestLoadExternalValid(t *testing.T) {
 }
 
 func TestLoadExternalInvalid(t *testing.T) {
-	paths, err := filepath.Glob(filepath.Join("testdata", "invalid*.yaml"))
+	paths, err := filepath.Glob(filepath.Join("testdata", "invalid.external*.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
