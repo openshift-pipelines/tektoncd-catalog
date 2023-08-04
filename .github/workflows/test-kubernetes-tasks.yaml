@@ -2,9 +2,10 @@ on:
   pull_request:
     branches: [ main, p ]
   push:
-    branches: [ main ]
+    branches: [ main, p ]
   schedule:
     - cron: '0 0 * * *'
+  workflow_dispatch: # allow manual triggering
 
 name: test-k8s-pipeline-latest
 
