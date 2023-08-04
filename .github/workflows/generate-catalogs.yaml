@@ -59,7 +59,9 @@ jobs:
         path: experimental
     - name: Sync main "helper code" with p
       run: |
-        cp -fR main/{automation,Makefile,.github/workflows} .
+        cp -fR main/{automation,Makefile} .
+        mkdir -p .github
+        cp -fR main/.github/workflows .github
     - name: Add experimental catalog to publish branch
       run: |
           git config user.name github-actions
