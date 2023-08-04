@@ -1,6 +1,6 @@
 # This workflow generates the experimental catalog and pushes it to
 # the publish branch.
-name: generate-experimental-catalog
+name: generate-catalogs
 
 on:
   workflow_dispatch: # allow manual triggering
