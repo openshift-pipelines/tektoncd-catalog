@@ -67,7 +67,7 @@ jobs:
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
             git status
-            git add experimental
+            git add experimental Makefile automation
             git commit -m "Auto-update packages"
             git pull --rebase --autostash
           else
