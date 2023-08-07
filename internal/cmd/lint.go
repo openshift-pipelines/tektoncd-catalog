@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sync"
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/config"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/linter"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/runner"
-
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +48,45 @@ func (l *LintCmd) Validate() error {
 
 // Run runs the linter against the informed resource file.
 func (l *LintCmd) Run(cfg *config.Config) error {
-	lr, err := linter.NewLinter(cfg, l.resource)
+	isFolder, err := isDirectory(l.resource)
+	if err != nil {
+		return err
+	}
+	if isFolder {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		errs := []error{}
+
+		err := filepath.Walk(l.resource,
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !isYaml(path) {
+					fmt.Println("Ignoring non-yaml file", path)
+					return nil
+				}
+				wg.Add(1)
+				go func() {
+					err := lintFile(cfg, path)
+					mu.Lock()
+					errs = append(errs, err)
+					mu.Unlock()
+					wg.Done()
+				}()
+				return nil
+			})
+		if err != nil {
+			return err
+		}
+		wg.Wait()
+		return errors.Join(errs...)
+	}
+	return lintFile(cfg, l.resource)
+}
+
+func lintFile(cfg *config.Config, path string) error {
+	lr, err := linter.NewLinter(cfg, path)
 	if err != nil {
 		return err
 	}
@@ -62,4 +102,20 @@ func NewLintCmd() runner.SubCommand {
 		SilenceUsage: true,
 	}
 	return &LintCmd{cmd: cmd}
+}
+
+// isDirectory determines if a file represented
+// by `path` is a directory or not
+func isDirectory(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	return fileInfo.IsDir(), err
+}
+
+func isYaml(path string) bool {
+	ext := filepath.Ext(path)
+	return ext == ".yaml" || ext == ".yml"
 }
