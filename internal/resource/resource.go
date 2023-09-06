@@ -1,4 +1,4 @@
-package linter
+package resource
 
 import (
 	"os"
@@ -13,8 +13,8 @@ import (
 
 // ReadAndDecodeResourceFile reads the informed file and decode contents using Tekton's Kubernetes
 // schema, returning a Unstructured instance.
-func ReadAndDecodeResourceFile(resource string) (*unstructured.Unstructured, error) {
-	payload, err := os.ReadFile(resource)
+func ReadAndDecodeResourceFile(resourceFile string) (*unstructured.Unstructured, error) {
+	payload, err := os.ReadFile(resourceFile)
 	if err != nil {
 		return nil, err
 	}

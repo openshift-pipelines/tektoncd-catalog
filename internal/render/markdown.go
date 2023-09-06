@@ -5,6 +5,7 @@ import (
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/config"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/linter"
+	"github.com/openshift-pipelines/tektoncd-catalog/internal/resource"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -48,8 +49,8 @@ func (m *Markdown) Render() error {
 }
 
 // NewMarkdown instantiates the markdown render by decoding the informed resource file.
-func NewMarkdown(cfg *config.Config, resource string) (*Markdown, error) {
-	u, err := linter.ReadAndDecodeResourceFile(resource)
+func NewMarkdown(cfg *config.Config, resourceFile string) (*Markdown, error) {
+	u, err := resource.ReadAndDecodeResourceFile(resourceFile)
 	if err != nil {
 		return nil, err
 	}
