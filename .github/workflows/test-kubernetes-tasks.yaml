@@ -21,7 +21,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/tektoncd
 
       - name: End-to-End Tests
@@ -32,7 +32,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/go
 
       - name: Linting tekton resources
