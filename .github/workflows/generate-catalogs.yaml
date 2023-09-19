@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'openshift-pipelines' # do not run this elsewhere
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/go
 
       - name: Generate experimental catalog
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'openshift-pipelines' # do not run this elsewhere
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/go
 
       - name: Generate catalog
@@ -53,11 +53,11 @@ jobs:
       - generate-catalog
     steps:
       - name: Checkout "p" publish branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: p
       - name: Checkout "main" branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
           path: main
