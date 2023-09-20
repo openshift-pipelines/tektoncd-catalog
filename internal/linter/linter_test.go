@@ -13,7 +13,7 @@ func TestNewLinter(t *testing.T) {
 
 	cfg := config.NewConfig()
 
-	l, err := NewLinter(cfg, "../../../test/resources/task.yaml")
+	l, err := NewLinter(cfg, "../../test/resources/task.yaml")
 	g.Expect(err).To(o.Succeed())
 	g.Expect(l).NotTo(o.BeNil())
 

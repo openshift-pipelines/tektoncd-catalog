@@ -12,7 +12,7 @@ func TestNewMarkdow(t *testing.T) {
 
 	cfg := config.NewConfig()
 
-	m, err := NewMarkdown(cfg, "../../../test/resources/task.yaml")
+	m, err := NewMarkdown(cfg, "../../test/resources/task.yaml")
 	g.Expect(err).To(o.Succeed())
 	g.Expect(m).NotTo(o.BeNil())
 
