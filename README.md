@@ -34,3 +34,78 @@ Triggers, and any other element that can be used with `tektoncd/pipeline`).
   - Possibly driving API "feature"/changes
     Because we will write a lot of task, use them, … we should be able to find gap or
     enhancements in the API, and propose them as TEPs (with data).
+
+# Usage Examples
+
+
+This section explains how to use the tasks supported in this repository with the help of various tools like Tekton Resolvers as well as Pipelines as Code. 
+
+## Using Tekton Resolvers
+
+Make sure kubectl is installed, if not install it using this [link](https://kubernetes.io/docs/tasks/tools/).
+
+After that create a YAML file as follows:
+
+```yaml
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: simple-taskrun-example
+spec:
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: your-claim-name
+      subPath: source
+  taskRef:
+    resolver: git
+    params:
+      - name: url
+        value: https://github.com/openshift-pipelines/tektoncd-catalog.git
+      - name: revision
+        value: p
+      - name: pathInRepo
+        value: experimental/tasks/go-crane-image/v0.1.0/go-crane-image.yaml
+  params:
+    - name: app
+      value: example-task
+    - name: image
+      value:
+        prefix: "add-custom-prefix"
+```
+
+Filename used in example is taskrun.yaml
+
+Note that for this example we have used a PersistentVolumeClaim as follows:
+
+```yaml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    name: test
+  name: test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 250Mi
+```
+
+Filename used in example is pvc.yaml
+
+Then use the following commands to apply & run the above TaskRun
+
+- Create PVC resource: kubectl apply -f pvc.yaml
+- Create TaskRun: kubectl apply -f taskrun.yaml
+
+Similarly you use Resolvers to create Pipelines & PipelineRuns as well. 
+
+To learn more about resolver, use this [link](https://tekton.dev/docs/pipelines/resolution-getting-started/). 
+
+## Using Pipelines as Code
+
+WIP
