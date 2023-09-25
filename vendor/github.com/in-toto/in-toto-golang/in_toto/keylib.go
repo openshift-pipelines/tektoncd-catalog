@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -197,9 +196,9 @@ func (k *Key) setKeyComponents(pubKeyBytes []byte, privateKeyBytes []byte, keyTy
 parseKey tries to parse a PEM []byte slice. Using the following standards
 in the given order:
 
-	* PKCS8
-	* PKCS1
-	* PKIX
+  - PKCS8
+  - PKCS1
+  - PKIX
 
 On success it returns the parsed key and nil.
 On failure it returns nil and the error ErrFailedPEMParsing
@@ -260,22 +259,22 @@ LoadKey loads the key file at specified file path into the key object.
 It automatically derives the PEM type and the key type.
 Right now the following PEM types are supported:
 
-	* PKCS1 for private keys
-	* PKCS8	for private keys
-	* PKIX for public keys
+  - PKCS1 for private keys
+  - PKCS8	for private keys
+  - PKIX for public keys
 
 The following key types are supported and will be automatically assigned to
 the key type field:
 
-	* ed25519
-	* rsa
-	* ecdsa
+  - ed25519
+  - rsa
+  - ecdsa
 
 The following schemes are supported:
 
-	* ed25519 -> ed25519
-	* rsa -> rsassa-pss-sha256
-	* ecdsa -> ecdsa-sha256-nistp256
+  - ed25519 -> ed25519
+  - rsa -> rsassa-pss-sha256
+  - ecdsa -> ecdsa-sha256-nistp256
 
 Note that, this behavior is consistent with the securesystemslib, except for
 ecdsa. We do not use the scheme string as key type in in-toto-golang.
@@ -283,11 +282,11 @@ Instead we are going with a ecdsa/ecdsa-sha2-nistp256 pair.
 
 On success it will return nil. The following errors can happen:
 
-	* path not found or not readable
-	* no PEM block in the loaded file
-	* no valid PKCS8/PKCS1 private key or PKIX public key
-	* errors while marshalling
-	* unsupported key types
+  - path not found or not readable
+  - no PEM block in the loaded file
+  - no valid PKCS8/PKCS1 private key or PKIX public key
+  - errors while marshalling
+  - unsupported key types
 */
 func (k *Key) LoadKey(path string, scheme string, KeyIDHashAlgorithms []string) error {
 	pemFile, err := os.Open(path)
@@ -325,7 +324,7 @@ func (k *Key) LoadKeyReader(r io.Reader, scheme string, KeyIDHashAlgorithms []st
 		return ErrNoPEMBlock
 	}
 	// Read key bytes
-	pemBytes, err := ioutil.ReadAll(r)
+	pemBytes, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}
@@ -344,7 +343,7 @@ func (k *Key) LoadKeyReaderDefaults(r io.Reader) error {
 		return ErrNoPEMBlock
 	}
 	// Read key bytes
-	pemBytes, err := ioutil.ReadAll(r)
+	pemBytes, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}
@@ -366,7 +365,7 @@ func (k *Key) LoadKeyReaderDefaults(r io.Reader) error {
 func getDefaultKeyScheme(key interface{}) (scheme string, keyIDHashAlgorithms []string, err error) {
 	keyIDHashAlgorithms = []string{"sha256", "sha512"}
 
-	switch key.(type) {
+	switch k := key.(type) {
 	case *rsa.PublicKey, *rsa.PrivateKey:
 		scheme = rsassapsssha256Scheme
 	case ed25519.PrivateKey, ed25519.PublicKey:
@@ -374,7 +373,7 @@ func getDefaultKeyScheme(key interface{}) (scheme string, keyIDHashAlgorithms []
 	case *ecdsa.PrivateKey, *ecdsa.PublicKey:
 		scheme = ecdsaSha2nistp256
 	case *x509.Certificate:
-		return getDefaultKeyScheme(key.(*x509.Certificate).PublicKey)
+		return getDefaultKeyScheme(k.PublicKey)
 	default:
 		err = ErrUnsupportedKeyType
 	}
@@ -382,11 +381,10 @@ func getDefaultKeyScheme(key interface{}) (scheme string, keyIDHashAlgorithms []
 	return scheme, keyIDHashAlgorithms, err
 }
 
-func (k *Key) loadKey(key interface{}, pemData *pem.Block, scheme string, keyIDHashAlgorithms []string) error {
-
-	switch key.(type) {
+func (k *Key) loadKey(keyObj interface{}, pemData *pem.Block, scheme string, keyIDHashAlgorithms []string) error {
+	switch key := keyObj.(type) {
 	case *rsa.PublicKey:
-		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.(*rsa.PublicKey))
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key)
 		if err != nil {
 			return err
 		}
@@ -396,7 +394,7 @@ func (k *Key) loadKey(key interface{}, pemData *pem.Block, scheme string, keyIDH
 	case *rsa.PrivateKey:
 		// Note: RSA Public Keys will get stored as X.509 SubjectPublicKeyInfo (RFC5280)
 		// This behavior is consistent to the securesystemslib
-		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.(*rsa.PrivateKey).Public())
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.Public())
 		if err != nil {
 			return err
 		}
@@ -404,16 +402,16 @@ func (k *Key) loadKey(key interface{}, pemData *pem.Block, scheme string, keyIDH
 			return err
 		}
 	case ed25519.PublicKey:
-		if err := k.setKeyComponents(key.(ed25519.PublicKey), []byte{}, ed25519KeyType, scheme, keyIDHashAlgorithms); err != nil {
+		if err := k.setKeyComponents(key, []byte{}, ed25519KeyType, scheme, keyIDHashAlgorithms); err != nil {
 			return err
 		}
 	case ed25519.PrivateKey:
-		pubKeyBytes := key.(ed25519.PrivateKey).Public()
-		if err := k.setKeyComponents(pubKeyBytes.(ed25519.PublicKey), key.(ed25519.PrivateKey), ed25519KeyType, scheme, keyIDHashAlgorithms); err != nil {
+		pubKeyBytes := key.Public()
+		if err := k.setKeyComponents(pubKeyBytes.(ed25519.PublicKey), key, ed25519KeyType, scheme, keyIDHashAlgorithms); err != nil {
 			return err
 		}
 	case *ecdsa.PrivateKey:
-		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.(*ecdsa.PrivateKey).Public())
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.Public())
 		if err != nil {
 			return err
 		}
@@ -421,7 +419,7 @@ func (k *Key) loadKey(key interface{}, pemData *pem.Block, scheme string, keyIDH
 			return err
 		}
 	case *ecdsa.PublicKey:
-		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key.(*ecdsa.PublicKey))
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(key)
 		if err != nil {
 			return err
 		}
@@ -429,7 +427,7 @@ func (k *Key) loadKey(key interface{}, pemData *pem.Block, scheme string, keyIDH
 			return err
 		}
 	case *x509.Certificate:
-		err := k.loadKey(key.(*x509.Certificate).PublicKey, pemData, scheme, keyIDHashAlgorithms)
+		err := k.loadKey(key.PublicKey, pemData, scheme, keyIDHashAlgorithms)
 		if err != nil {
 			return err
 		}
@@ -450,8 +448,8 @@ with the provided key. If everything goes right GenerateSignature will return
 a for the key valid signature and err=nil. If something goes wrong it will
 return a not initialized signature and an error. Possible errors are:
 
-	* ErrNoPEMBlock
-	* ErrUnsupportedKeyType
+  - ErrNoPEMBlock
+  - ErrUnsupportedKeyType
 
 Currently supported is only one scheme per key.
 
@@ -554,9 +552,9 @@ func GenerateSignature(signable []byte, key Key) (Signature, error) {
 VerifySignature will verify unverified byte data via a passed key and signature.
 Supported key types are:
 
-	* rsa
-	* ed25519
-	* ecdsa
+  - rsa
+  - ed25519
+  - ecdsa
 
 When encountering an RSA key, VerifySignature will decode the PEM block in the key
 and will call rsa.VerifyPSS() for verifying the RSA signature.
@@ -655,7 +653,8 @@ func VerifySignature(key Key, sig Signature, unverified []byte) error {
 /*
 VerifyCertificateTrust verifies that the certificate has a chain of trust
 to a root in rootCertPool, possibly using any intermediates in
-intermediateCertPool */
+intermediateCertPool
+*/
 func VerifyCertificateTrust(cert *x509.Certificate, rootCertPool, intermediateCertPool *x509.CertPool) ([][]*x509.Certificate, error) {
 	verifyOptions := x509.VerifyOptions{
 		Roots:         rootCertPool,

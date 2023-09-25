@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/config"
+	"github.com/openshift-pipelines/tektoncd-catalog/internal/resource"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -76,9 +77,9 @@ func (l *Linter) Enforce() error {
 }
 
 // NewLinter instantiate the resource linter by reading and decoding the resource file.
-func NewLinter(cfg *config.Config, resource string) (*Linter, error) {
-	cfg.Infof("# Linting resource file %q...\n", resource)
-	u, err := ReadAndDecodeResourceFile(resource)
+func NewLinter(cfg *config.Config, resourceFile string) (*Linter, error) {
+	cfg.Infof("# Linting resource file %q...\n", resourceFile)
+	u, err := resource.ReadAndDecodeResourceFile(resourceFile)
 	if err != nil {
 		return nil, err
 	}

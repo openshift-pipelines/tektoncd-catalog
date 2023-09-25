@@ -58,7 +58,7 @@ func (l *LintCmd) Run(cfg *config.Config) error {
 		errs := []error{}
 
 		err := filepath.Walk(l.resource,
-			func(path string, info os.FileInfo, err error) error {
+			func(path string, _ os.FileInfo, err error) error {
 				if err != nil {
 					return err
 				}
