@@ -47,8 +47,8 @@ func TestFetchFromExternal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(c.Tasks) != 1 {
-		t.Fatalf("Should have created a catalog with only 1 task, got %d: %v", len(c.Tasks), c.Tasks)
+	if len(c.Tasks) != 2 {
+		t.Fatalf("Should have created a catalog with only 2 task, got %d: %v", len(c.Tasks), c.Tasks)
 	}
 }
 
