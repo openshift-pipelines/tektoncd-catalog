@@ -43,48 +43,53 @@ func FetchFromExternal(e config.External, client *api.RESTClient) (Catalog, erro
 				delete(m, v)
 			}
 		}
+
 		for version, contract := range m {
 			if fetchTask {
-				for _, task := range contract.Tasks {
-					if _, ok := c.Tasks[task.Name]; !ok {
-						// task doesn't exists yet, creating it
-						c.Tasks[task.Name] = Task{
-							Versions: map[string]VersionnedTask{},
+				if contract.Catalog.Resources != nil {
+					for _, task := range contract.Catalog.Resources.Tasks {
+						if _, ok := c.Tasks[task.Name]; !ok {
+							// task doesn't exists yet, creating it
+							c.Tasks[task.Name] = Task{
+								Versions: map[string]VersionnedTask{},
+							}
 						}
-					}
-					if _, ok := c.Tasks[task.Name].Versions[version]; ok {
-						//  name/version confict
-						return c, fmt.Errorf("Task %s has a version conflict (%s)", task.Name, r.URL)
-					}
-					downloadURL := task.File
-					if !strings.HasPrefix(task.File, "https://") {
-						downloadURL = fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, task.File)
-					}
-					c.Tasks[task.Name].Versions[version] = VersionnedTask{
-						DownloadURL: downloadURL,
-						Bundle:      task.Bundle,
+						if _, ok := c.Tasks[task.Name].Versions[version]; ok {
+							//  name/version confict
+							return c, fmt.Errorf("Task %s has a version conflict (%s)", task.Name, r.URL)
+						}
+						downloadURL := task.Filename
+						if !strings.HasPrefix(task.Filename, "https://") {
+							downloadURL = fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, task.Filename)
+						}
+						c.Tasks[task.Name].Versions[version] = VersionnedTask{
+							DownloadURL: downloadURL,
+							// Bundle:      task.Bundle, // FIXME: add bundle support
+						}
 					}
 				}
 			}
 			if fetchPipeline {
-				for _, pipeline := range contract.Pipelines {
-					if _, ok := c.Pipelines[pipeline.Name]; !ok {
-						// pipeline doesn't exists yet, creating it
-						c.Pipelines[pipeline.Name] = Pipeline{
-							Versions: map[string]VersionnedPipeline{},
+				if contract.Catalog.Resources != nil {
+					for _, pipeline := range contract.Catalog.Resources.Pipelines {
+						if _, ok := c.Pipelines[pipeline.Name]; !ok {
+							// pipeline doesn't exists yet, creating it
+							c.Pipelines[pipeline.Name] = Pipeline{
+								Versions: map[string]VersionnedPipeline{},
+							}
 						}
-					}
-					if _, ok := c.Pipelines[pipeline.Name].Versions[version]; ok {
-						// name/version confict
-						return c, fmt.Errorf("Pipeline %s has a version conflict (%s)", pipeline.Name, r.URL)
-					}
-					downloadURL := pipeline.File
-					if !strings.HasPrefix(pipeline.File, "https://") {
-						downloadURL = fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, pipeline.File)
-					}
-					c.Pipelines[pipeline.Name].Versions[version] = VersionnedPipeline{
-						DownloadURL: downloadURL,
-						Bundle:      pipeline.Bundle,
+						if _, ok := c.Pipelines[pipeline.Name].Versions[version]; ok {
+							// name/version confict
+							return c, fmt.Errorf("Pipeline %s has a version conflict (%s)", pipeline.Name, r.URL)
+						}
+						downloadURL := pipeline.Filename
+						if !strings.HasPrefix(pipeline.Filename, "https://") {
+							downloadURL = fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, pipeline.Filename)
+						}
+						c.Pipelines[pipeline.Name].Versions[version] = VersionnedPipeline{
+							DownloadURL: downloadURL,
+							// Bundle:      pipeline.Bundle, // FIXME: add bundle support
+						}
 					}
 				}
 			}

@@ -5,26 +5,20 @@ import (
 	"strings"
 
 	"github.com/cli/go-gh/v2/pkg/api"
+	"github.com/openshift-pipelines/tektoncd-catalog/internal/contract"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/fetcher/config"
 )
 
-// TODO: prepare the "dest" workspace
-//
-//	(fetch the repository's `p` branch, …)
-//
 // TODO: fetch release assets
 //   - fetch yamls
 //   - fetch tests (yamls with kttl)
 //   - fetch bundles, sbom, …
 //
-// TODO: extract in destination folder
-// TODO: copy source/ to dest/ as well
+// TODO: write catalog.yaml in some places (so that we could regenerate it)
 //
 //	(warn if there is conflicts)
-//
-// TODO: create a PR
-func FetchContractsFromRepository(r config.Repository, client *api.RESTClient) (map[string]config.Contract, error) {
-	m := map[string]config.Contract{}
+func FetchContractsFromRepository(r config.Repository, client *api.RESTClient) (map[string]*contract.Contract, error) {
+	m := map[string]*contract.Contract{}
 
 	if !strings.HasPrefix(r.URL, "https://github.com") {
 		return m, fmt.Errorf("Non-github repository not supported: %s", r.URL)
@@ -42,7 +36,7 @@ func FetchContractsFromRepository(r config.Repository, client *api.RESTClient) (
 		var contractAsset Asset
 		contractFound := false
 		for _, a := range v.Assets {
-			if a.Name == "contract.yaml" {
+			if a.Name == "catalog.yaml" {
 				contractFound = true
 				contractAsset = a
 				break
@@ -53,7 +47,7 @@ func FetchContractsFromRepository(r config.Repository, client *api.RESTClient) (
 			continue
 		}
 		// Load contract from asset
-		contract, err := config.LoadContractFromURL(contractAsset.DownloadURL)
+		contract, err := contract.NewContractFromURL(contractAsset.DownloadURL)
 		if err != nil {
 			return m, fmt.Errorf("Failed to load asset %s from %s: %w", contractAsset.Name, v.TagName, err)
 		}

@@ -3,6 +3,8 @@ package contract
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path"
 
@@ -129,10 +131,30 @@ func NewContractFromFile(location string) (*Contract, error) {
 		return nil, err
 	}
 
+	return NewContractFromData(payload)
+}
+
+// NewContractFromURL instantiates a new Contract{} from a URL.
+func NewContractFromURL(url string) (*Contract, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("Could not load contract from %s: %w", url, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Status error: %v", resp.StatusCode)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Could not load contract from %s: %w", url, err)
+	}
+	return NewContractFromData(data)
+}
+
+// NewContractFromData instantiates a new Contract{} from a YAML payload.
+func NewContractFromData(payload []byte) (*Contract, error) {
 	c := Contract{}
-	if err = yaml.Unmarshal(payload, &c); err != nil {
+	if err := yaml.Unmarshal(payload, &c); err != nil {
 		return nil, err
 	}
-	c.file = file
 	return &c, nil
 }
