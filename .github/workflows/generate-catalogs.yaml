@@ -83,6 +83,8 @@ jobs:
           path: experimental
       - name: Add experimental catalog to publish branch
         run: |
+          # Clean main from here before the status
+          rm -fR main
           git config user.name github-actions
           git config user.email github-actions@github.com
           CHANGES=$(git status -s)
@@ -144,6 +146,8 @@ jobs:
           path: .
       - name: Add experimental catalog to publish branch
         run: |
+          # Clean main from here before the status
+          rm -fR main
           git config user.name github-actions
           git config user.email github-actions@github.com
           CHANGES=$(git status -s)
