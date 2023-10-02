@@ -67,7 +67,9 @@ jobs:
           # Copy from main
           cp -fR main/{automation,Makefile} .
           mkdir -p .github/workflows
+          mkdir -p .github/workflows .github/actions
           cp -fR main/.github/workflows/test* .github/workflows
+          cp -fR main/.github/workflows/actions/* .github/actions
       - name: Clean old "generated" catalogs
         run: |
           # Remove experimental resources
@@ -126,8 +128,9 @@ jobs:
           rm -fR automation Makefile .github
           # Copy from main
           cp -fR main/{automation,Makefile} .
-          mkdir -p .github/workflows
+          mkdir -p .github/workflows .github/actions
           cp -fR main/.github/workflows/test* .github/workflows
+          cp -fR main/.github/workflows/actions/* .github/actions
       - name: Clean old "generated" catalogs
         run: |
           # Remove "stable" resources
