@@ -1,13 +1,18 @@
+---
+name: test-k8s-pipeline-latest
+
 on:
   pull_request:
-    branches: [ main, p ]
+    branches:
+      - main
+      - p
   push:
-    branches: [ main, p ]
+    branches:
+      - main
+      - p
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
   workflow_dispatch: # allow manual triggering
-
-name: test-k8s-pipeline-latest
 
 jobs:
   test:
@@ -16,21 +21,24 @@ jobs:
       contents: read
       packages: write
     steps:
-    - uses: actions/checkout@v3
-    # using KinD to provide the Kubernetes instance and kubectl
-    - uses: helm/kind-action@v1.8.0
-      with:
-        cluster_name: kind
-    # setting up Tekton Pipelines, CLI and additional components...
-    - uses: openshift-pipelines/setup-tektoncd@v1
-      with:
-        pipeline_version: latest
-        feature_flags: '{}'
-        cli_version: latest
-        setup_registry: "true"
-        patch_etc_hosts: "true"
-      # pipeline-feature-flags: '{"enable-api-fields": "alpha"}'
-    - name: run-tests
-      run: |        
-        kubectl version
-        make test-e2e/kubernetes
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/tektoncd
+
+      - name: End-to-End Tests
+        run: |
+          kubectl version
+          make test-e2e/kubernetes
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/go
+
+      - name: Linting tekton resources
+        run: |
+          # Lint experimental
+          go run ./cmd/catalog-cd lint experimental/tasks || true
+          go run ./cmd/catalog-cd lint experimental/pipelines || true
+          go run ./cmd/catalog-cd lint tasks || true
+          go run ./cmd/catalog-cd lint pipelines || true
