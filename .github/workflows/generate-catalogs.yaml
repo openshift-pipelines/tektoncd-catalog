@@ -15,7 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/go
-
       - name: Generate experimental catalog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,7 +37,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          mkdir -p stable/tasks stable/pipelines
           go run ./cmd/catalog-cd generate --config ./externals.yaml stable
+          cp tasks/artifacthub-repo.yaml stable/tasks
+          cp pipelines/artifacthub-repo.yaml stable/pipelines
       - uses: actions/upload-artifact@v3
         with:
           name: stable-catalog-artifact
