@@ -38,9 +38,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p stable/tasks stable/pipelines
+          cp -fR tasks/* stable/tasks
+          cp -fR pipelines/* stable/pipelines
           go run ./cmd/catalog-cd generate --config ./externals.yaml stable
-          cp tasks/artifacthub-repo.yml stable/tasks
-          cp pipelines/artifacthub-repo.yml stable/pipelines
       - uses: actions/upload-artifact@v3
         with:
           name: stable-catalog-artifact
