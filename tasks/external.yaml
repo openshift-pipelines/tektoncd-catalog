@@ -1,5 +1,0 @@
-type: task
-repositories:
-- name: https://github.com/shortbrain/golang
-  url: https://github.com/shortbrain/golang
-  # ignore-versions: [0.0.1] # ignore incompatible versions

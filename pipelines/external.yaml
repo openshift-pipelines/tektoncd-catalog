@@ -1,5 +1,0 @@
-tasks:
-- repository: https://github.com/openshift-pipelines/task-git
-  # ignore-versions: [0.0.1] # ignore incompatible versions
-- repository: https://github.com/openshift-pipelines/task-containers
-- repository: https://github.com/shortbrain/golang-tasks
