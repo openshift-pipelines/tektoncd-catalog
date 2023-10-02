@@ -84,7 +84,6 @@ jobs:
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
             git status
-            git add tasks pipelines
             git add experimental Makefile automation .github
             git commit -m "Auto-update experimental tekton resources"
             git pull --rebase --autostash
@@ -146,7 +145,7 @@ jobs:
           if [[ -n "${CHANGES}" ]]; then
             git status
             git add tasks pipelines
-            git add experimental Makefile automation .github
+            git add Makefile automation .github
             git commit -m "Auto-update tekton resources"
             git pull --rebase --autostash
           else
