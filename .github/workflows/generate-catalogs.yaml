@@ -159,7 +159,7 @@ jobs:
           base: p
           delete-branch: true
           add-paths: README.md # This is here just to force it to not commit anything
-          title: Catalog changes
+          title: Catalog changes
           assignees: tekton-ecosystem-team
           labels: approved, lgtm, ok-to-test # Automatically approved :)
           # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
