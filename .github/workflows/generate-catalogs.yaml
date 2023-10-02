@@ -45,12 +45,11 @@ jobs:
           path: stable/
           retention-days: 3 # We don't need to keep them for long
 
-  publish-catalog:
+  publish-experimental-catalog:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'openshift-pipelines' # do not run this elsewhere
     needs:
       - generate-experimental-catalog
-      - generate-catalog
     steps:
       - name: Checkout "p" publish branch
         uses: actions/checkout@v4
@@ -73,13 +72,67 @@ jobs:
         run: |
           # Remove experimental resources
           rm -fR experimental/{tasks,pipelines}/*
-          # Remove "stable" resources
-          rm -fR {tasks,pipelines}/*
       - name: Fetch generated experimental catalog
         uses: actions/download-artifact@v3
         with:
           name: experimental-catalog-artifact
           path: experimental
+      - name: Add experimental catalog to publish branch
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          CHANGES=$(git status -s)
+          if [[ -n "${CHANGES}" ]]; then
+            git status
+            git add tasks pipelines
+            git add experimental Makefile automation .github
+            git commit -m "Auto-update experimental tekton resources"
+            git pull --rebase --autostash
+          else
+            echo "No changes for the experimental catalog"
+          fi
+      - name: Create PR
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          base: p
+          delete-branch: true
+          add-paths: README.md # This is here just to force it to not commit anything
+          title: Experimental catalog changes
+          assignees: tekton-ecosystem-team
+          labels: approved, lgtm, ok-to-test # Automatically approved :)
+          # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
+          # author: ${{ env.GIT_AUTHOR_NAME }} ${{ env.GIT_AUTHOR_EMAIL }}
+          # body: ${{ steps.pr_body.outputs.content }} # TODO(vdemeester) Write git status from the artifact
+
+
+  publish-catalog:
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'openshift-pipelines' # do not run this elsewhere
+    needs:
+      - generate-catalog
+    steps:
+      - name: Checkout "p" publish branch
+        uses: actions/checkout@v4
+        with:
+          ref: p
+      - name: Checkout "main" branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - name: Sync main "helper code" with p
+        run: |
+          # Clean existing
+          rm -fR automation Makefile .github
+          # Copy from main
+          cp -fR main/{automation,Makefile} .
+          mkdir -p .github/workflows
+          cp -fR main/.github/workflows/test* .github/workflows
+      - name: Clean old "generated" catalogs
+        run: |
+          # Remove "stable" resources
+          rm -fR {tasks,pipelines}/*
       - name: Fetch generated stable catalog
         uses: actions/download-artifact@v3
         with:
@@ -94,10 +147,10 @@ jobs:
             git status
             git add tasks pipelines
             git add experimental Makefile automation .github
-            git commit -m "Auto-update packages"
+            git commit -m "Auto-update tekton resources"
             git pull --rebase --autostash
           else
-            echo "No changes for the experimental catalog"
+            echo "No changes for the catalog"
           fi
       - name: Create PR
         id: create-pr
@@ -106,7 +159,7 @@ jobs:
           base: p
           delete-branch: true
           add-paths: README.md # This is here just to force it to not commit anything
-          title: Experimental catalog changes
+          title: Catalog changes
           assignees: tekton-ecosystem-team
           labels: approved, lgtm, ok-to-test # Automatically approved :)
           # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
