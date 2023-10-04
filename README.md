@@ -38,7 +38,7 @@ Triggers, and any other element that can be used with `tektoncd/pipeline`).
 # Usage Examples
 
 
-This section explains how to use the tasks supported in this repository with the help of various tools like Tekton Resolvers as well as Pipelines as Code. 
+This section explains how to use the tasks supported in this repository with the help of various tools like [Tekton Resolvers](https://tekton.dev/docs/pipelines/resolution-getting-started/) as well as [Pipelines as Code](https://pipelinesascode.com/). 
 
 ## Using Tekton Resolvers
 
@@ -89,9 +89,8 @@ spec:
           value:
             prefix: $(params.IMAGE_PREFIX)
 ```
-Note: Add either a secret or update the service account with the git credentials
 
-Also for this example we have used a PersistentVolumeClaim as follows:
+For this example we have used a PersistentVolumeClaim as follows:
 
 ```yaml
 ---
@@ -111,9 +110,9 @@ spec:
 
 Then use the following commands to apply & run the above Pipeline
 
-- Create PVC resource: kubectl apply -f pvc.yaml
-- Create Pipeline: kubectl apply -f pipeline.yaml
-- PipelineRun: tkn pipeline start example-pipeline --workspace="name=source,claimName=test,subPath=source" --showlog
+- Create PVC resource: ```kubectl apply -f pvc.yaml```
+- Create Pipeline: ```kubectl apply -f pipeline.yaml```
+- PipelineRun: ```tkn pipeline start example-pipeline --workspace="name=source,claimName=test,subPath=source" --showlog```
 
 To learn more about resolver, use this [link](https://tekton.dev/docs/pipelines/resolution-getting-started/). 
 
@@ -126,18 +125,21 @@ After this it'll create a PipelineRun template, which can then be customized sim
 
 Some annotations to look for are: 
 ```
-annotations:
+metadata:
+  annotations:
     pipelinesascode.tekton.dev/on-event: "[push]"
     pipelinesascode.tekton.dev/on-target-branch: "[main]"
     pipelinesascode.tekton.dev/max-keep-runs: "5"
 ```
 
-## Cloning the repo (Not Recommended)
+## Cloning the repo or Directly (Not Recommended)
 
 You can also consume our resources by cloning this repository and manually creating the resources in the cluster as well
 
 Helpful commands:
-- git clone https://github.com/openshift-pipelines/tektoncd-catalog.git
-- kubectl apply path-of-task.yaml (replace path-of-task with relevant task's path)
+- `kubectl apply -f https://github.com/openshift-pipelines/tektoncd-catalog/blob/p/experimental/tasks/name-of-task/version/file.yaml`, replace "name-of-task/version/file" according to your required task
+OR
+- `git clone https://github.com/openshift-pipelines/tektoncd-catalog.git`
+- `kubectl apply path-of-task.yaml` (replace path-of-task with relevant task's path)
 
 After adding the Tasks to the cluster, you can use them as needed for other resources 
