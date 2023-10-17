@@ -1,5 +1,33 @@
 # Design
 
+From repository `task-git` to `tektoncd-catalog` `p` branch.
+
+- In `task-git` repository
+	- I have a "configuration file" (`catalog.yaml` ?) that lists Tasks and Pipelines from the repository that I want to release
+		- This file can be generated, updated, … 
+	- When I do the release, I want to issue one command (`catalog-cd release`)
+		- it mutates the resources to add the version annotation
+		- it generates the final `catalog.yaml` with hash, digest, signature, …
+		- it packages the tasks and pipelines in a `tekton-resources.tar.gz` tarball (with READMEs for documentation)
+		- it (optionally) create, push the tag, create a GitHub release and attach content to it
+- In `tektoncd-catalog` repository
+	- `task-git` is configured in the `externals.yaml` configuration file
+	- A schedule action (each hours ?) does the following, for each entry in `externals.yaml`
+		- List releases and filter those that have a `catalog.yaml`
+		- Fetch the `catalog.yaml` and the `tekton-resources.tar.gz`
+		- Extract the tarball content and merge it with the current catalog available in the `p` branch
+		- Creates a pull-request to update it
+	- The pull request checks includes
+		- Lint the resources
+		
+What is describe above is *required* for the internal launch.
+
+What is missing from here:
+- Attestation, SBOM, signature, …
+- How to validate the task is well tested (so that Red Hat can support it)
+
+---
+
 ## Workflow
 
 - `p` is where the indexed catalog is (where users can pull it from)

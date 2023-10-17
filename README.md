@@ -1,17 +1,21 @@
 # tektoncd-catalog
 
-Catalog of Tekton resources (Tasks, Pipelines, …) by Red Hat. 
+This is the home of the catalog of Tekton resources (Tasks, Pipelines, …) by Red Hat. 
 
 This repository contains a catalog of `Task` resources (and someday
-`Pipeline`s and other resources), which are designed to be reusable in many
-pipelines, authored and supported by Red Hat.
+`Pipeline`s and other resources), which are designed to be reusable in many pipelines, authored and supported by Red Hat.
 
-Each `Task` is provided in a separate directory along with a README.md and a
-Kubernetes manifest, so you can choose which `Task`s to install on your
-cluster. A directory can hold one task and multiple versions.
+These `Task` and `Pipeline` are coming from the release of different repositories, maintained by different teams from Red Hat or from partners. See [here](https://github.com/openshift-pipelines/tektoncd-catalog/blob/main/externals.yaml) to know where they are pulled from.
 
-The layout of this repository follows the of [TEP-003: Tekton catalog
-organization](https://github.com/tektoncd/community/blob/main/teps/0003-tekton-catalog-organization.md).
+As of today, they are indexed by [ArtifactHub](https://github.com/artifacthub.io) in several "catalog":
+- [redhat-tekton-tasks](https://artifacthub.io/packages/search?repo=redhat-tekton-tasks&page=1)
+- [redhat-tekton-pipelines](https://artifacthub.io/packages/search?repo=redhat-tekton-pipelines&page=1)
+- [redhat-tekton-experimental-tasks](https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-tasks)
+- [redhat-tekton-experimental-pipelines](https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-pipelines)
+
+The `main` branch of the repository is holding the configuration and tooling to maintain the catalog. The `p` branch is where the the catalog is "persisted" and should be consumed.
+
+Each `Task` is provided in a separate directory along with a README.md and aKubernetes manifest, so you can choose which `Task`s to install on your cluster. A directory can hold one task and multiple versions. The layout of this repository (branch `p`) the follows of [TEP-003: Tekton catalog organization](https://github.com/tektoncd/community/blob/main/teps/0003-tekton-catalog-organization.md).
 
 # What is Tekton ecosystem team about
 

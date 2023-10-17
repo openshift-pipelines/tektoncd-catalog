@@ -1,34 +1,34 @@
-`.catalog.yaml`
+`catalog.yaml`
 
 # Abstract
 
-Describes what the dot-file `.catalog.yaml` contains and the use-cases indented for this **contract**. The dot-file will be placed on the root of a CVS repository containing Tekton Pipeline resources (Tasks and Pipelines).
+Describes what the file `catalog.yaml` contains and the use-cases indented for this **contract**. The file will be placed on the root of a CVS repository containing Tekton Pipeline resources (Tasks and Pipelines).
 
-The `.catalog.yaml` goal is to serve as a blueprint to find the resources managed on the respective repository, as well to provide information for software supply chain attestation, and describe continuous integration test-cases.
+The `catalog.yaml` goal is to serve as a blueprint to find the resources managed on the respective repository, as well to provide information for software supply chain attestation, and describe continuous integration test-cases.
 
-During the release of these repositories the `.catalog.yaml` is added to the payload in order to describe the Tekton resource artifacts.
+During the release of these repositories the `catalog.yaml` is added to the payload in order to describe the Tekton resource artifacts.
 
 # Use-Cases
 
-The dot-file described on this document is meant to make possible the use-cases described below.
+The file described on this document is meant to make possible the use-cases described below.
 
 ## Repository Root
 
-The primary location for the `.catalog.yaml` file is on the root of the (Git?) repository, describing all the elements, providing software supply chain attestation data and as well descring test cases.
+The primary location for the `catalog.yaml` file is on the root of the (Git?) repository, describing all the elements, providing software supply chain attestation data and as well descring test cases.
 
 For repositories containing the direct YAML payload of Tekton resource files stored, the file will also contain `.catalog.resources` entries, reflecting the location of the data.
 
 ### Release Artifacts
 
-The `.catalog.yaml` should be present on the repositories release payload, therefore when the maintainers decide to release a new version, the `.catalog.yaml` is able to overwrite the entries on `.catalog.resources`.
+The `catalog.yaml` should be present on the repositories release payload, therefore when the maintainers decide to release a new version, the `catalog.yaml` is able to overwrite the entries on `.catalog.resources`.
 
 This ability makes possible to template Tekton resources instead of the plain YAML files, and during the regular releases the resource are assembled.
 
 ## Continuous Integration
 
-# `.catalog.{yml,yaml}`
+# `catalog.{yml,yaml}`
 
-The dot-file looks like the example below.
+The file looks like the example below.
 
 ```yml
 ---
