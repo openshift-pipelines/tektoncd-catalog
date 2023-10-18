@@ -9,14 +9,7 @@ import (
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/fetcher/config"
 )
 
-// TODO: fetch release assets
-//   - fetch yamls
-//   - fetch tests (yamls with kttl)
-//   - fetch bundles, sbom, …
-//
-// TODO: write catalog.yaml in some places (so that we could regenerate it)
-//
-//	(warn if there is conflicts)
+// FetchContractsFromRepository fetches contracts from a repository.
 func FetchContractsFromRepository(r config.Repository, client *api.RESTClient) (map[string]*contract.Contract, error) {
 	m := map[string]*contract.Contract{}
 
@@ -36,7 +29,7 @@ func FetchContractsFromRepository(r config.Repository, client *api.RESTClient) (
 		var contractAsset Asset
 		contractFound := false
 		for _, a := range v.Assets {
-			if a.Name == "catalog.yaml" {
+			if a.Name == "catalog.yaml" || a.Name == "catalog.yml" {
 				contractFound = true
 				contractAsset = a
 				break
