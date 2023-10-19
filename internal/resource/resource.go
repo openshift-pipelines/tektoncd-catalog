@@ -44,3 +44,11 @@ func ReadAndDecodeResourceFile(resourceFile string) (*unstructured.Unstructured,
 	}
 	return &u, nil
 }
+
+func GetResourceType(resourceFile string) (string, error) {
+	u, err := ReadAndDecodeResourceFile(resourceFile)
+	if err != nil {
+		return "", err
+	}
+	return u.GetKind(), nil
+}

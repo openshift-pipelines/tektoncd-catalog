@@ -19,7 +19,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          go run ./cmd/catalog-cd generate --config ./experimental/externals.yaml experimental
+          go run ./cmd/catalog-cd generate-catalog --config ./experimental/externals.yaml experimental
       - uses: actions/upload-artifact@v3
         with:
           name: experimental-catalog-artifact
@@ -40,7 +40,7 @@ jobs:
           mkdir -p stable/tasks stable/pipelines
           cp -fR tasks/* stable/tasks
           cp -fR pipelines/* stable/pipelines
-          go run ./cmd/catalog-cd generate --config ./externals.yaml stable
+          go run ./cmd/catalog-cd generate-catalog --config ./externals.yaml stable
       - uses: actions/upload-artifact@v3
         with:
           name: stable-catalog-artifact

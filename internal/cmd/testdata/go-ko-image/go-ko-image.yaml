@@ -1,0 +1,178 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: go-ko-image
+  labels:
+    app.kubernetes.io/version: "0.2.1"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.40.0"
+    tekton.dev/categories: language
+    tekton.dev/tags: go
+    tekton.dev/displayName: "go ko image"
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+spec:
+  description: >-
+    The go-koimage Task will build a container image based of off a go
+    project using ko.
+  workspaces:
+  - name: source
+    description: The go source to build
+  - name: dockerconfig
+    description: Includes a docker `config.json` or `.dockerconfigjson`
+    optional: true
+  params:
+  - name: app
+    description: >-
+      The name of the "application" to build. This will have an impact on the binary
+      and possibly the image reference
+  - name: package
+    description: >-
+      The package to build. It needs to be a package `main` that compiles into a binary.
+      The default value is `.`, usual value can be `./cmd/{name}`
+    default: .
+  - name: flags
+    description: >-
+      ko extra flags to pass to the ko command
+    default: "--sbom none"
+  - name: image
+    description: >-
+      The image specific options such as prefix, labels, env, …
+    type: object
+    properties:
+      base: {type: string}
+      labels: {type: string}
+      envs: {type: string}
+      push: {type: string}
+      prefix: {type: string}
+      tag: {type: string}
+    default:
+      base: ""
+      labels: ""
+      envs: ""
+      push: "true"
+      tag: "latest"
+  - name: go
+    description: >-
+      Golang options, such as flags, version, …
+    type: object
+    properties:
+      # FIXME: support go version
+      # version: {type: string}
+      GOFLAGS: {type: string}
+      GOOS: {type: string}
+      GOARCH: {type: string}
+      CGO_ENABLED: {type: string}
+    default:
+      # version: "1.18"
+      GOFLAGS: "-v"
+      GOOS: ""
+      GOARCH: ""
+      CGO_ENABLED: "0"
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the image just built.
+    - name: IMAGE_URL
+      description: URL of the image just built.
+  steps:
+  - name: build-and-publish
+    image: ghcr.io/ko-build/ko:latest
+    workingDir: $(workspaces.source.path)
+    script: |
+      #!/usr/bin/env bash
+      set -e
+
+      if [[ "$(workspaces.dockerconfig.bound)" == "true" ]]; then
+        # if config.json exists at workspace root, we use that
+        if test -f "$(workspaces.dockerconfig.path)/config.json"; then
+          export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
+        # else we look for .dockerconfigjson at the root
+        elif test -f "$(workspaces.dockerconfig.path)/.dockerconfigjson"; then
+          cp "$(workspaces.dockerconfig.path)/.dockerconfigjson" "$HOME/.docker/config.json"
+          export DOCKER_CONFIG="$HOME/.docker"
+        # need to error out if neither files are present
+        else
+          echo "neither 'config.json' nor '.dockerconfigjson' found at workspace root"
+          exit 1
+        fi
+      fi
+
+      KO_FLAGS="$(params.flags) --tags $(params.image.tag)"
+      if [[ "$(params.image.push)" == "false" ]]; then
+        KO_FLAGS="${KO_FLAGS} --push=false"
+      fi
+
+      # labels
+      while IFS=';' read -ra LABELS; do
+      for LABEL in "${LABELS[@]}"; do
+        KO_FLAGS="${KO_FLAGS} --image-label ${LABEL}"
+      done
+      done <<< "$(params.image.labels)"
+
+      go env
+
+      echo "defaultBaseImage: $(params.image.base)" > .ko.yaml
+
+      set -x
+      ko build --base-import-paths ${KO_FLAGS} $(params.package) > $(results.IMAGE_URL.path)
+      set +x
+      
+      KO_OUTPUT=$(results.IMAGE_URL.path)
+      echo -n ${CRANE_OUTPUT#*@} > $(results.IMAGE_DIGEST.path)
+    env:
+    - name: GOFLAGS
+      value: "$(params.go.GOFLAGS)"
+    - name: GOOS
+      value: "$(params.go.GOOS)"
+    - name: GOARCH
+      value: "$(params.go.GOARCH)"
+    - name: CGO_ENABLED
+      value: "$(params.go.CGO_ENABLED)"
+    - name: KO_DOCKER_REPO
+      value: $(params.image.prefix)
+  - name: add-metadata
+    image: ghcr.io/shortbrain/golang-tasks/crane:main
+    workingDir: $(workspaces.source.path)
+    script: |
+      #!/usr/bin/env bash
+      set -e
+
+      if [[ "$(params.image.push)" == "false" ]]; then
+        echo "Not doing anything as push is disabled"
+        echo -n "" > $(resutls.IMAGE_DIGEST.path)
+        echo -n "" > $(resutls.IMAGE_URL.path)
+        exit 0
+      fi
+      
+      if [[ "$(workspaces.dockerconfig.bound)" == "true" ]]; then
+        # if config.json exists at workspace root, we use that
+        if test -f "$(workspaces.dockerconfig.path)/config.json"; then
+          export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
+        # else we look for .dockerconfigjson at the root
+        elif test -f "$(workspaces.dockerconfig.path)/.dockerconfigjson"; then
+          cp "$(workspaces.dockerconfig.path)/.dockerconfigjson" "$HOME/.docker/config.json"
+          export DOCKER_CONFIG="$HOME/.docker"
+        # need to error out if neither files are present
+        else
+          echo "neither 'config.json' nor '.dockerconfigjson' found at workspace root"
+          exit 1
+        fi
+      fi
+
+      if [[ -z "$(params.image.envs)" ]]; then
+        echo "Not doing anything as there is no envs specified"
+      fi
+      
+      MUTATE_FLAGS=" --tag $(params.image.prefix)/$(params.app)"
+      # envs
+      while IFS=';' read -ra ENVS; do
+      for ENV in "${ENVS[@]}"; do
+        MUTATE_FLAGS="${MUTATE_FLAGS} --env ${ENV}"
+      done
+      done <<< "$(params.image.envs)"
+      
+      crane mutate $(cat $(results.IMAGE_URL.path)) \
+        ${MUTATE_FLAGS} > crane_output
+      CRANE_OUTPUT=$(cat crane_output)
+      echo -n ${CRANE_OUTPUT#*@} > $(results.IMAGE_DIGEST.path)
+      echo -n ${CRANE_OUTPUT} > $(results.IMAGE_URL.path)
+      # echo -n ${CRANE_OUTPUT%@*} > $(results.IMAGE_URL.path)

@@ -3,6 +3,8 @@ package contract
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/resource"
 )
@@ -68,7 +70,7 @@ func (c *Contract) VerifyResources(ctx context.Context, fn ResourceVerifySignatu
 
 // AddResourceFile adds a resource file on the contract, making sure it's a Tekton resource
 // file and uses the "kind" to guide on which attribute the resource will be appended.
-func (c *Contract) AddResourceFile(resourceFile string, version string) error {
+func (c *Contract) AddResourceFile(resourceFile, version string) error {
 	// parsing the resource as a kubernetes unstructured type to read it's name and kind
 	u, err := resource.ReadAndDecodeResourceFile(resourceFile)
 	if err != nil {
@@ -84,10 +86,12 @@ func (c *Contract) AddResourceFile(resourceFile string, version string) error {
 		return err
 	}
 
+	filename := filepath.Join(strings.ToLower(u.GetKind())+"s", filepath.Base(filepath.Dir(resourceFile)), filepath.Base(resourceFile))
+
 	tr := TektonResource{
 		Name:     u.GetName(),
 		Version:  version,
-		Filename: resourceFile,
+		Filename: filename,
 		Checksum: sha256sum,
 	}
 

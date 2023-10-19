@@ -1,38 +1,27 @@
 package catalog
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/cli/go-gh/v2/pkg/api"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/fetcher"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/fetcher/config"
 )
 
-func FetchFromExternal(e config.External, client *api.RESTClient) (Catalog, error) {
+func FetchFromExternals(e config.External, client *api.RESTClient) (Catalog, error) {
 	c := Catalog{
-		Tasks:     map[string]Task{},
-		Pipelines: map[string]Pipeline{},
+		Resources: map[string]Resource{},
 	}
 	for _, r := range e.Repositories {
-		var fetchTask, fetchPipeline bool
-		if r.Types == nil {
-			fetchTask = true
-			fetchPipeline = true
-		} else {
-			for _, t := range r.Types {
-				if t == "tasks" {
-					fetchTask = true
-				}
-				if t == "pipelines" {
-					fetchPipeline = true
-				}
-			}
-		}
+		fmt.Fprintln(os.Stderr, "Fetching", r.Name, "("+r.URL+")")
+		c.Resources[r.Name] = Resource{}
+
 		m, err := fetcher.FetchContractsFromRepository(r, client)
 		if err != nil {
 			return c, err
@@ -44,103 +33,29 @@ func FetchFromExternal(e config.External, client *api.RESTClient) (Catalog, erro
 			}
 		}
 
-		for version, contract := range m {
-			if fetchTask {
-				if contract.Catalog.Resources != nil {
-					for _, task := range contract.Catalog.Resources.Tasks {
-						if _, ok := c.Tasks[task.Name]; !ok {
-							// task doesn't exists yet, creating it
-							c.Tasks[task.Name] = Task{
-								Versions: map[string]VersionnedTask{},
-							}
-						}
-						if _, ok := c.Tasks[task.Name].Versions[version]; ok {
-							//  name/version confict
-							return c, fmt.Errorf("Task %s has a version conflict (%s)", task.Name, r.URL)
-						}
-						downloadURL := task.Filename
-						if !strings.HasPrefix(task.Filename, "https://") {
-							downloadURL = fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, task.Filename)
-						}
-						c.Tasks[task.Name].Versions[version] = VersionnedTask{
-							DownloadURL: downloadURL,
-							// Bundle:      task.Bundle, // FIXME: add bundle support
-						}
-					}
-				}
-			}
-			if fetchPipeline {
-				if contract.Catalog.Resources != nil {
-					for _, pipeline := range contract.Catalog.Resources.Pipelines {
-						if _, ok := c.Pipelines[pipeline.Name]; !ok {
-							// pipeline doesn't exists yet, creating it
-							c.Pipelines[pipeline.Name] = Pipeline{
-								Versions: map[string]VersionnedPipeline{},
-							}
-						}
-						if _, ok := c.Pipelines[pipeline.Name].Versions[version]; ok {
-							// name/version confict
-							return c, fmt.Errorf("Pipeline %s has a version conflict (%s)", pipeline.Name, r.URL)
-						}
-						downloadURL := pipeline.Filename
-						if !strings.HasPrefix(pipeline.Filename, "https://") {
-							downloadURL = fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, pipeline.Filename)
-						}
-						c.Pipelines[pipeline.Name].Versions[version] = VersionnedPipeline{
-							DownloadURL: downloadURL,
-							// Bundle:      pipeline.Bundle, // FIXME: add bundle support
-						}
-					}
-				}
-			}
+		for version, _ := range m {
+			resourcesDownloaldURI := fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, "resources.tar.gz")
+			c.Resources[r.Name][version] = resourcesDownloaldURI
 		}
 	}
 	return c, nil
 }
 
 func GenerateFilesystem(path string, c Catalog) error {
-	if err := generateTasksFilesystem(filepath.Join(path, "tasks"), c.Tasks); err != nil {
-		return fmt.Errorf("Failed to create the tasks filesystem: %w", err)
-	}
-	if err := generatePipelinesFilesystem(filepath.Join(path, "pipelines"), c.Pipelines); err != nil {
-		return fmt.Errorf("Failed to create the tasks filesystem: %w", err)
-	}
-	return nil
-}
-
-func generateTasksFilesystem(path string, tasks map[string]Task) error {
-	for name, t := range tasks {
-		for version, task := range t.Versions {
-			taskfolder := filepath.Join(path, name, version)
-			if err := os.MkdirAll(taskfolder, os.ModePerm); err != nil {
-				return err
-			}
-			taskfile := filepath.Join(taskfolder, fmt.Sprintf("%s.yaml", name))
-			if err := fetchAndWrite(taskfile, task.DownloadURL); err != nil {
-				return fmt.Errorf("Couldn't fetch %s in %s: %w", task.DownloadURL, taskfile, err)
+	for name, resource := range c.Resources {
+		fmt.Fprintf(os.Stderr, "# Fetching resource %s\n", name)
+		for version, uri := range resource {
+			fmt.Fprintf(os.Stderr, "## Fetching version %s\n", version)
+			if err := fetchAndExtract(path, uri, version); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to fetch resource %s: %v, skipping\n", uri, err)
+				continue
 			}
 		}
 	}
 	return nil
 }
 
-func generatePipelinesFilesystem(path string, pipelines map[string]Pipeline) error {
-	for name, t := range pipelines {
-		for version, pipeline := range t.Versions {
-			pipelinefolder := filepath.Join(path, name, version)
-			if err := os.MkdirAll(filepath.Join(path, name, version), os.ModePerm); err != nil {
-				return err
-			}
-			pipelinefile := filepath.Join(pipelinefolder, fmt.Sprintf("%s.yaml", name))
-			if err := fetchAndWrite(pipelinefile, pipeline.DownloadURL); err != nil {
-				return fmt.Errorf("Couldn't fetch %s in %s: %w", pipeline.DownloadURL, pipelinefile, err)
-			}
-		}
-	}
-	return nil
-}
-
-func fetchAndWrite(file, url string) error {
+func fetchAndExtract(path, url, version string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -148,40 +63,72 @@ func fetchAndWrite(file, url string) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Status error: %v", resp.StatusCode)
 	}
-	w, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-
-	_, err = io.Copy(w, resp.Body)
-	if err != nil {
-		return err
-	}
-	return nil
+	return untar(path, version, resp.Body)
 }
 
-// Catalog is a struct that represent a "file-based" catalog
-// file-based catalog
+func untar(dst, version string, r io.Reader) error {
+	gzr, err := gzip.NewReader(r)
+	if err != nil {
+		return err
+	}
+	defer gzr.Close()
+
+	tr := tar.NewReader(gzr)
+
+	for {
+		header, err := tr.Next()
+		switch {
+		// if no more files are found return
+		case err == io.EOF:
+			return nil
+		// return any other error
+		case err != nil:
+			return err
+		// if the header is nil, just skip it (not sure how this happens)
+		case header == nil:
+			continue
+		}
+
+		// the target location where the dir/file should be created
+		filename := filepath.Base(header.Name)
+		targetFolder := filepath.Join(dst, filepath.Dir(header.Name), version)
+		target := filepath.Join(targetFolder, filename)
+
+		if err := os.MkdirAll(targetFolder, os.ModePerm); err != nil {
+			return err
+		}
+		// the following switch could also be done using fi.Mode(), not sure if there
+		// a benefit of using one vs. the other.
+		// fi := header.FileInfo()
+
+		// check the file type
+		switch header.Typeflag {
+		// if its a dir and it doesn't exist create it
+		case tar.TypeDir:
+			if _, err := os.Stat(target); err != nil {
+				if err := os.MkdirAll(target, 0755); err != nil {
+					return err
+				}
+			}
+		// if it's a file create it
+		case tar.TypeReg:
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				return err
+			}
+			// copy over contents
+			if _, err := io.Copy(f, tr); err != nil {
+				return err
+			}
+			// manually close here after each file operation; defering would cause each file close
+			// to wait until all operations have completed.
+			f.Close()
+		}
+	}
+}
+
 type Catalog struct {
-	Tasks     map[string]Task
-	Pipelines map[string]Pipeline
+	Resources map[string]Resource
 }
 
-type Task struct {
-	Versions map[string]VersionnedTask
-}
-
-type VersionnedTask struct {
-	DownloadURL string
-	Bundle      string
-}
-
-type Pipeline struct {
-	Versions map[string]VersionnedPipeline
-}
-
-type VersionnedPipeline struct {
-	DownloadURL string
-	Bundle      string
-}
+type Resource map[string]string

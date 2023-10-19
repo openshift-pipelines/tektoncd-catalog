@@ -75,7 +75,7 @@ func (v *GenerateCmd) Run(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	c, err := catalog.FetchFromExternal(e, ghclient)
+	c, err := catalog.FetchFromExternals(e, ghclient)
 	if err != nil {
 		return err
 	}
@@ -83,11 +83,11 @@ func (v *GenerateCmd) Run(cfg *config.Config) error {
 	return catalog.GenerateFilesystem(v.target, c)
 }
 
-// NewGenerateCmd instantiates the "generate" subcommand.
-func NewGenerateCmd() runner.SubCommand {
+// NewGenerateCatalogCmd instantiates the "generate" subcommand.
+func NewGenerateCatalogCmd() runner.SubCommand {
 	v := &GenerateCmd{
 		cmd: &cobra.Command{
-			Use:          "generate",
+			Use:          "generate-catalog",
 			Args:         cobra.ExactArgs(1),
 			Long:         generateLongDescription,
 			Short:        "Verifies the resource file signature",
