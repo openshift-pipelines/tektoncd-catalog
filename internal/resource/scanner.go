@@ -16,7 +16,6 @@ func Scanner(pattern string) ([]string, error) {
 	if info != nil && info.IsDir() {
 		patterns = append(patterns, path.Join(pattern, "*.yml"))
 		patterns = append(patterns, path.Join(pattern, "*.yaml"))
-		patterns = append(patterns, path.Join(pattern, "README.md"))
 	}
 
 	files := []string{}

@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: go-crane-image-source-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: go-crane-image-pipeline
+spec:
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: https://github.com/chmouel/go-rest-api-test
+        - name: subdirectory
+          value: ""
+        - name: deleteExisting
+          value: "true"
+    - name: run-build
+      taskRef:
+        name: go-crane-image
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+      - name: app
+        value: go-rest-api
+      - name: go
+        value:
+          CGO_ENABLED: "0"
+      - name: image
+        value:
+          base: docker.io/library/alpine
+          prefix: registry.local:5000/go-rest-api-test
+          labels: foo=bar;bar=baz
+          envs: FOO=bar;BAR=baz
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: go-crane-image-test-run
+spec:
+  pipelineRef:
+    name: go-crane-image-pipeline
+  workspaces:
+    - name: shared-workspace
+      persistentvolumeclaim:
+        claimName: go-crane-image-source-pvc
