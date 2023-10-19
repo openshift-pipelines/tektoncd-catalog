@@ -86,7 +86,7 @@ func (c *Contract) AddResourceFile(resourceFile, version string) error {
 		return err
 	}
 
-	filename := filepath.Join(strings.ToLower(u.GetKind()), filepath.Base(filepath.Dir(resourceFile)), filepath.Base(resourceFile))
+	filename := filepath.Join(strings.ToLower(u.GetKind())+"s", filepath.Base(filepath.Dir(resourceFile)), filepath.Base(resourceFile))
 
 	tr := TektonResource{
 		Name:     u.GetName(),

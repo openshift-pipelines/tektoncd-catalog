@@ -95,7 +95,7 @@ func (r *ReleaseCmd) Run(_ *config.Config) error {
 			if err != nil {
 				return err
 			}
-			resourceFolder := filepath.Join(r.output, strings.ToLower(resourceType), taskname)
+			resourceFolder := filepath.Join(r.output, strings.ToLower(resourceType)+"s", taskname)
 			if err := os.MkdirAll(resourceFolder, os.ModePerm); err != nil {
 				return err
 			}
