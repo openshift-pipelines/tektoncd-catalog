@@ -43,7 +43,7 @@ func TestFetchFromExternal(t *testing.T) {
 			Types: []string{"tasks"},
 		}},
 	}
-	c, err := catalog.FetchFromExternal(e, client)
+	c, err := catalog.FetchFromExternals(e, client)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,7 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/config"
@@ -18,8 +20,8 @@ import (
 type ReleaseCmd struct {
 	cmd     *cobra.Command // cobra command definition
 	version string         // release version
-	files   []string       // tekton resource files
-	output  string         // output file, where the contract will be written
+	paths   []string       // tekton resource paths
+	output  string         // output path, where the contract and tarball will be written
 }
 
 var _ runner.SubCommand = &ReleaseCmd{}
@@ -51,25 +53,6 @@ func (r *ReleaseCmd) Cmd() *cobra.Command {
 	return r.cmd
 }
 
-// gatherGlogPatternFromArgs creates a set of glob patterns based on the final command line
-// arguments (args), when the slice is empty it assumes the current working directory.
-func (*ReleaseCmd) gatherGlogPatternFromArgs(args []string) ([]string, error) {
-	patterns := []string{}
-
-	if len(args) == 0 {
-		wd, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		patterns = append(patterns, wd)
-		fmt.Printf("# Using current directory: %q\n", wd)
-	} else {
-		patterns = append(patterns, args...)
-	}
-
-	return patterns, nil
-}
-
 // Complete creates the "release" scope by finding all Tekton resource files using the cli
 // args glob pattern(s).
 func (r *ReleaseCmd) Complete(_ *config.Config, args []string) error {
@@ -77,32 +60,16 @@ func (r *ReleaseCmd) Complete(_ *config.Config, args []string) error {
 	if r.output == "" {
 		return fmt.Errorf("--output flag is not informed")
 	}
-
-	// putting together a slice of glob patterns to search tekton files
-	patterns, err := r.gatherGlogPatternFromArgs(args)
-	if err != nil {
-		return err
-	}
-
-	// going through the pattern slice collected before to select the tekton resource files
-	// to be part of the current release, in other words, release scope
-	fmt.Printf("# Scan Tekton resources on: %s\n", strings.Join(patterns, ", "))
-	for _, pattern := range patterns {
-		files, err := resource.Scanner(pattern)
-		if err != nil {
-			return err
-		}
-		r.files = append(r.files, files...)
-	}
+	r.paths = args
 	return nil
 }
 
 // Validate assert the release scope is not empty.
 func (r *ReleaseCmd) Validate() error {
-	if len(r.files) == 0 {
-		return fmt.Errorf("no tekton resource files have been found")
+	if len(r.paths) == 0 {
+		return fmt.Errorf("no tekton resource paths have been found")
 	}
-	fmt.Printf("# Found %d files to inspect!\n", len(r.files))
+	fmt.Printf("# Found %d path to inspect!\n", len(r.paths))
 	return nil
 }
 
@@ -110,20 +77,45 @@ func (r *ReleaseCmd) Validate() error {
 // on the location informed by the "--output" flag.
 func (r *ReleaseCmd) Run(_ *config.Config) error {
 	c := contract.NewContractEmpty()
+	// going through the pattern slice collected before to select the tekton resource files
+	// to be part of the current release, in other words, release scope
+	fmt.Printf("# Scan Tekton resources on: %s\n", strings.Join(r.paths, ", "))
+	for _, p := range r.paths {
+		files, err := resource.Scanner(p)
+		if err != nil {
+			return err
+		}
 
-	fmt.Printf("# Generating contract for release %q...\n", r.version)
-	for _, f := range r.files {
-		fmt.Printf("# Loading resource file: %q\n", f)
-		if err := c.AddResourceFile(f, r.version); err != nil {
-			if errors.Is(err, contract.ErrTektonResourceUnsupported) {
+		for _, f := range files {
+			fmt.Fprintf(os.Stderr, "# Loading resource file: %q\n", f)
+			taskname := filepath.Base(filepath.Dir(f))
+			if filepath.Base(f) == "README.md" {
+				// This is the README, copy it to output
+				if err := os.MkdirAll(filepath.Join(r.output, taskname), os.ModePerm); err != nil {
+					return err
+				}
+				if err := copyFile(f, filepath.Join(r.output, taskname, "README.md")); err != nil {
+					return err
+				}
+				continue
+			}
+			if err := c.AddResourceFile(f, r.version); err != nil {
+				if errors.Is(err, contract.ErrTektonResourceUnsupported) {
+					return err
+				}
+				fmt.Printf("# WARNING: Skipping file %q!\n", f)
+			}
+
+			// Copy it to output
+			if err := copyFile(f, filepath.Join(r.output, taskname, filepath.Base(f))); err != nil {
 				return err
 			}
-			fmt.Printf("# WARNING: Skipping file %q!\n", f)
 		}
 	}
 
-	fmt.Printf("# Saving release contract at %q\n", r.output)
-	return c.SaveAs(r.output)
+	catalogPath := filepath.Join(r.output, "catalog.yaml")
+	fmt.Printf("# Saving release contract at %q\n", catalogPath)
+	return c.SaveAs(catalogPath)
 }
 
 // NewReleaseCmd instantiates the NewReleaseCmd subcommand and flags.
@@ -141,11 +133,41 @@ func NewReleaseCmd() runner.SubCommand {
 	f := r.cmd.PersistentFlags()
 
 	f.StringVar(&r.version, "version", "", "release version")
-	f.StringVar(&r.output, "output", contract.Filename, "path to the contract file")
+	f.StringVar(&r.output, "output", contract.Filename, "path to the release files (to attach to a given release)")
 
 	if err := r.cmd.MarkPersistentFlagRequired("version"); err != nil {
 		panic(err)
 	}
 
 	return r
+}
+
+func copyFile(src, dst string) error {
+	// Open the source file for reading
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	// Create the destination file
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	// Copy the contents of the source file to the destination file
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	// Flush the destination file to ensure all data is written
+	err = dstFile.Sync()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

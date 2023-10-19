@@ -3,6 +3,7 @@ package contract
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/resource"
 )
@@ -84,10 +85,12 @@ func (c *Contract) AddResourceFile(resourceFile string, version string) error {
 		return err
 	}
 
+	filename := filepath.Join(filepath.Base(filepath.Dir(resourceFile)), filepath.Base(resourceFile))
+
 	tr := TektonResource{
 		Name:     u.GetName(),
 		Version:  version,
-		Filename: resourceFile,
+		Filename: filename,
 		Checksum: sha256sum,
 	}
 

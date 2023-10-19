@@ -75,7 +75,7 @@ func (v *GenerateCmd) Run(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	c, err := catalog.FetchFromExternal(e, ghclient)
+	c, err := catalog.FetchFromExternals(e, ghclient)
 	if err != nil {
 		return err
 	}

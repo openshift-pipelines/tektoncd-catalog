@@ -13,12 +13,13 @@ import (
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/fetcher/config"
 )
 
-func FetchFromExternal(e config.External, client *api.RESTClient) (Catalog, error) {
+func FetchFromExternals(e config.External, client *api.RESTClient) (Catalog, error) {
 	c := Catalog{
 		Tasks:     map[string]Task{},
 		Pipelines: map[string]Pipeline{},
 	}
 	for _, r := range e.Repositories {
+		fmt.Fprintln(os.Stderr, "Fetching", r.Name, "("+r.URL+")")
 		var fetchTask, fetchPipeline bool
 		if r.Types == nil {
 			fetchTask = true
