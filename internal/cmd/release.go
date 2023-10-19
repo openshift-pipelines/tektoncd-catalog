@@ -112,7 +112,7 @@ func (r *ReleaseCmd) Run(_ *config.Config) error {
 			readmeFile := filepath.Join(filepath.Dir(f), "README.md")
 			if _, err := os.Stat(readmeFile); err == nil {
 				// This is the README, copy it to output
-				if err := copyFile(f, filepath.Join(resourceFolder, "README.md")); err != nil {
+				if err := copyFile(readmeFile, filepath.Join(resourceFolder, "README.md")); err != nil {
 					return err
 				}
 				continue
