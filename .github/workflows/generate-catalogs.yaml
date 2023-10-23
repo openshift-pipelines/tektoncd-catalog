@@ -5,7 +5,7 @@ name: generate-catalogs
 
 on:
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "0 */6 * * *" # every 6 hours
   workflow_dispatch: # allow manual triggering
 
 jobs:
