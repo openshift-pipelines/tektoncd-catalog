@@ -89,6 +89,7 @@ jobs:
           git config user.email github-actions@github.com
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
+            git checkout -b update-experimental
             git status
             git add experimental Makefile automation .github
             git commit -m "Auto-update experimental tekton resources"
@@ -152,6 +153,7 @@ jobs:
           git config user.email github-actions@github.com
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
+            git checkout -b update-stable
             git status
             git add tasks pipelines
             git add Makefile automation .github
