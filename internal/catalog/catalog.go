@@ -19,7 +19,10 @@ func FetchFromExternals(e config.External, client *api.RESTClient) (Catalog, err
 		Resources: map[string]Resource{},
 	}
 	for _, r := range e.Repositories {
-		fmt.Fprintln(os.Stderr, "Fetching", r.Name, "("+r.URL+")")
+		if r.Name == "" {
+			// Name is empty, take the last part of the URL
+			r.Name = filepath.Base(r.URL)
+		}
 		c.Resources[r.Name] = Resource{}
 
 		m, err := fetcher.FetchContractsFromRepository(r, client)
@@ -33,7 +36,7 @@ func FetchFromExternals(e config.External, client *api.RESTClient) (Catalog, err
 			}
 		}
 
-		for version, _ := range m {
+		for version := range m {
 			resourcesDownloaldURI := fmt.Sprintf("%s/releases/download/%s/%s", r.URL, version, "resources.tar.gz")
 			c.Resources[r.Name][version] = resourcesDownloaldURI
 		}
@@ -43,7 +46,7 @@ func FetchFromExternals(e config.External, client *api.RESTClient) (Catalog, err
 
 func GenerateFilesystem(path string, c Catalog) error {
 	for name, resource := range c.Resources {
-		fmt.Fprintf(os.Stderr, "# Fetching resource %s\n", name)
+		fmt.Fprintf(os.Stderr, "# Fetching resources from %s\n", name)
 		for version, uri := range resource {
 			fmt.Fprintf(os.Stderr, "## Fetching version %s\n", version)
 			if err := fetchAndExtract(path, uri, version); err != nil {
@@ -106,7 +109,7 @@ func untar(dst, version string, r io.Reader) error {
 		// if its a dir and it doesn't exist create it
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+				if err := os.MkdirAll(target, 0o755); err != nil {
 					return err
 				}
 			}
