@@ -91,6 +91,7 @@ The Tekton resources on this repository are following the [policies defined here
 
 External repositories must define a [`catalog.yaml` manifest](./docs/catalog.md), which describes all the Tekton resource on the repository revision, release page or tag, guiding the automation through its directory structure.
 
+To provide your tasks and pipelines to this published version of this repository (the `p` branch), please follow this [workflow](./docs/workflow-provide-your-tekton-resources.md).
 
 [artifactHub]: https://github.com/artifacthub.io
 [artifactHubRedHatExperimentalPipelines]: https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-pipelines
