@@ -1,149 +1,108 @@
-# tektoncd-catalog
+Red Hat Tekton Catalog
+----------------------
 
-This is the home of the catalog of Tekton resources (Tasks, Pipelines, …) by Red Hat. 
+# Introduction
 
-This repository contains a catalog of `Task` resources (and someday
-`Pipeline`s and other resources), which are designed to be reusable in many pipelines, authored and supported by Red Hat.
+This is the home of the catalog of Red Hat Tekton resources. The repository contains a catalog of `Task` resources (someday `Pipeline`s and more), designed to be reusable in many Pipelines, [authored and supported by Red Hat](./docs/ecosystem-team.md).
 
-These `Task` and `Pipeline` are coming from the release of different repositories, maintained by different teams from Red Hat or from partners. See [here](https://github.com/openshift-pipelines/tektoncd-catalog/blob/main/externals.yaml) to know where they are pulled from.
+These `Task` and `Pipeline` are coming from the external repositories releases, maintained by different teams from Red Hat and partners. See [here](https://github.com/openshift-pipelines/tektoncd-catalog/blob/main/externals.yaml) to know where they are pulled from.
 
-As of today, they are indexed by [ArtifactHub](https://github.com/artifacthub.io) in several "catalog":
-- [redhat-tekton-tasks](https://artifacthub.io/packages/search?repo=redhat-tekton-tasks&page=1)
-- [redhat-tekton-pipelines](https://artifacthub.io/packages/search?repo=redhat-tekton-pipelines&page=1)
-- [redhat-tekton-experimental-tasks](https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-tasks)
-- [redhat-tekton-experimental-pipelines](https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-pipelines)
+As of today, they are indexed by [ArtifactHub][artifactHub] in several catalogs:
+- [redhat-tekton-tasks][artifactHubRedHatTasks]
+- [redhat-tekton-pipelines][artifactHubRedHatPipelines]
+- [redhat-tekton-experimental-tasks][artifactHubRedHatExperimentalTasks]
+- [redhat-tekton-experimental-pipelines][artifactHubRedHatExperimentalPipelines]
 
-The `main` branch of the repository is holding the configuration and tooling to maintain the catalog. The `p` branch is where the the catalog is "persisted" and should be consumed.
+The `main` branch of the repository contains the configuration and tooling to maintain the catalog. The [`p` branch][pBranch] is where the the catalog gets "persisted" and should be consumed.
 
-Each `Task` is provided in a separate directory along with a README.md and aKubernetes manifest, so you can choose which `Task`s to install on your cluster. A directory can hold one task and multiple versions. The layout of this repository (branch `p`) the follows of [TEP-003: Tekton catalog organization](https://github.com/tektoncd/community/blob/main/teps/0003-tekton-catalog-organization.md).
+Each `Task` is provided in a separate directory along with `README.md` and Kubernetes manifests, you can choose which `Task`s to install on your cluster. A directory can hold one task and multiple versions.
 
-# What is Tekton ecosystem team about
+The layout of this repository ([branch `p`][pBranch]) the follows the [Tekton Catalog Organization (TEP-0003)][TEP0003].
 
-The Tekton Ecosystem team aims to provide well written Tekton payloads (Tasks, Pipeline,
-Triggers, and any other element that can be used with `tektoncd/pipeline`).
+# Usage
 
-+ Well written (easy to use, customizable), supported, Tasks and Pipelines.
-  - Define a set of "support" levels (incubation, …)
-+ Same for any other type we think we should provide to our customers
-+ Allow Red Hat teams to own and maintain their own set of Tekton resources (for their project)
-+ Publish, Document and "publicize" those resources
-+ Provide easy way to compose and maintain tasks in Pipeline, in cluster, …
-  - Provide tooling for this
-  - Possibly provide `CustomTask` or `Resolvers` for it
-  - Build on top of existing tools (`renovate`, …)
+This section explains how to use the catalog ([`p` branch][pBranch]) with the help of various tools like [Tekton Resolvers][tektonResolvers] as well as [Pipelines as Code][pipelineAsCode]. 
 
-+ Long term
-  - Certifications (for partners)
-  - Red Hat catalog presense (catalog.redhat.com)
-  - Possibly driving API "feature"/changes
-    Because we will write a lot of task, use them, … we should be able to find gap or
-    enhancements in the API, and propose them as TEPs (with data).
+## Tekton Git Resolver
 
-# Usage Examples
+[Tekton Git Resolver][tektonGitResolver] retrives the resources directly from this repository [`p` branch][pBranch], like the following `TaskRun` example:
 
-
-This section explains how to use the tasks supported in this repository with the help of various tools like [Tekton Resolvers](https://tekton.dev/docs/pipelines/resolution-getting-started/) as well as [Pipelines as Code](https://pipelinesascode.com/). 
-
-## Using Tekton Resolvers
-
-Make sure kubectl is installed, if not install it using this [link](https://kubernetes.io/docs/tasks/tools/).
-
-To use our tasks, you can create a Pipeline Resource as follows:
-
-```yaml
+```yml
 ---
 apiVersion: tekton.dev/v1beta1
-kind: Pipeline
+kind: TaskRun
 metadata:
-  labels:
-    name: example-pipeline
-  name: example-pipeline
+  name: task-git
 spec:
-  params:
-    # Customize the Params as needed by your chosen tasks
-    - name: APP_NAME
-      type: string
-      default: example
-    - name: IMAGE_PREFIX
-      type: string
-      default: "test"
-
-  workspaces:
-    - name: source
-
-  tasks:
-    # Add or Reference other tasks as needed
-    - name: example-task
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/openshift-pipelines/tektoncd-catalog.git
-          - name: revision
-            value: p
-          - name: pathInRepo
-            value: experimental/tasks/go-crane-image/v0.1.0/go-crane-image.yaml
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: app
-          value: $(params.APP_NAME)
-        - name: image
-          value:
-            prefix: $(params.IMAGE_PREFIX)
+  taskRef:
+    resolver: git
+    params:
+      - name: url
+        value: https://github.com/openshift-pipelines/tektoncd-catalog
+      - name: revision
+        value: p
+      - name: pathInRepo
+        value: tasks/task-git/0.1.0/task-git.yaml
 ```
 
-For this example we have used a PersistentVolumeClaim as follows:
+The same approach work for [`PipelineRun` resources][tektonGitResolverPipeline].
 
-```yaml
+## Pipeline As Code
+
+Make sure [Pipeline-as-Code (PaC)][pipelineAsCode] is installed and ready on your cluster. For [OpenShift Pipelines][openshiftPipelines], you can define a [`TektonConfig`][openshiftPipelinesConfig] with this catalog by default, i.e:
+
+```yml
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
 metadata:
-  labels:
-    name: test
-  name: test
+  name: config
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 250Mi
+  pipeline:
+    git-resolver-config:
+      default-url: https://github.com/openshift-pipelines/tektoncd-catalog
+      default-revision: p
+      fetch-timeout: 1m 
 ```
 
-Then use the following commands to apply & run the above Pipeline
+Then, on the [repositories being watched by PaC][pipelineAsCodeRepository] you can consume this catalog resources like the following example:
 
-- Create PVC resource: ```kubectl apply -f pvc.yaml```
-- Create Pipeline: ```kubectl apply -f pipeline.yaml```
-- PipelineRun: ```tkn pipeline start example-pipeline --workspace="name=source,claimName=test,subPath=source" --showlog```
-
-To learn more about resolver, use this [link](https://tekton.dev/docs/pipelines/resolution-getting-started/). 
-
-## Using Pipelines as Code
-
-Make sure all the prerequisites are present for using pac (check that [here](https://pipelinesascode.com/docs/install/getting-started/)
-
-To create a template PipelineRun resource, you can use the command: tkn pac generate
-After this it'll create a PipelineRun template, which can then be customized similar to the previous example to incorporate our tasks
-
-Some annotations to look for are: 
-```
+```yml
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
 metadata:
-  annotations:
-    pipelinesascode.tekton.dev/on-event: "[push]"
-    pipelinesascode.tekton.dev/on-target-branch: "[main]"
-    pipelinesascode.tekton.dev/max-keep-runs: "5"
+  name: task-git
+spec:
+  taskRef:
+    resolver: git
+    params:
+      - name: pathInRepo
+        value: tasks/task-git/0.1.0/task-git.yaml
 ```
 
-## Cloning the repo or Directly (Not Recommended)
+Skipping the repository `url` and `revision` from `.spec.taskRef.params[]`.
 
-You can also consume our resources by cloning this repository and manually creating the resources in the cluster as well
+Alternatively the same notation supported described on [Tekton Git Resolver](#tekton-git-resolver) section is supported by PaC.
 
-Helpful commands:
-- `kubectl apply -f https://github.com/openshift-pipelines/tektoncd-catalog/blob/p/experimental/tasks/name-of-task/version/file.yaml`, replace "name-of-task/version/file" according to your required task
-OR
-- `git clone https://github.com/openshift-pipelines/tektoncd-catalog.git`
-- `kubectl apply path-of-task.yaml` (replace path-of-task with relevant task's path)
+# Contributing
 
-After adding the Tasks to the cluster, you can use them as needed for other resources 
+The Tekton resources on this repository are following the [policies defined here](./docs/lint.md), on a adding new [external repositories references](./externals.yaml) please observe these linting rules first.
+
+External repositories must define a [`catalog.yaml` manifest](./docs/catalog.md), which describes all the Tekton resource on the repository revision, release page or tag, guiding the automation through its directory structure.
+
+
+[artifactHub]: https://github.com/artifacthub.io
+[artifactHubRedHatExperimentalPipelines]: https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-pipelines
+[artifactHubRedHatExperimentalTasks]: https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-tasks
+[artifactHubRedHatPipelines]: https://artifacthub.io/packages/search?repo=redhat-tekton-pipelines&page=1
+[artifactHubRedHatTasks]: https://artifacthub.io/packages/search?repo=redhat-tekton-tasks&page=1
+[openshiftPipelines]: https://docs.openshift.com/pipelines/1.12/about/about-pipelines.html
+[openshiftPipelinesConfig]: https://docs.openshift.com/pipelines/1.12/create/remote-pipelines-tasks-resolvers.html#resolver-git-config-anon_remote-pipelines-tasks-resolvers
+[pBranch]: https://github.com/openshift-pipelines/tektoncd-catalog/tree/p
+[pipelineAsCode]: https://pipelinesascode.com/
+[pipelineAsCodeRepository]: https://github.com/openshift-pipelines/pipelines-as-code/blob/main/docs/content/docs/guide/repositorycrd.md
+[tektonGitResolver]: https://tekton.dev/docs/pipelines/git-resolver/
+[tektonGitResolverPipeline]:https://tekton.dev/docs/pipelines/git-resolver/#pipeline-resolution
+[tektonResolvers]: https://tekton.dev/docs/pipelines/resolution-getting-started/
+[TEP0003]: https://github.com/tektoncd/community/blob/main/teps/0003-tekton-catalog-organization.md
