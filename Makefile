@@ -45,6 +45,10 @@ test-e2e/kubernetes: test-e2e-kubernetes
 test-e2e-kubernetes: ## Run e2e tests on Kubernetes.
 	./automation/e2e-tests.sh kubernetes
 
+.PHONY: watch
+catalog-cd-watch: ## Watch go files and rebuild catalog-cd on changes (needs entr).
+	find . -name '*.go' | entr -r go build -v ./cmd/catalog-cd
+
 .PHONY: help
 help:
 	@grep -hE '^[ a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
