@@ -76,7 +76,7 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           base: p
-          branch: update-stable
+          branch: update-stable-${{ matrix.name }}-${{ matrix.type }}
           delete-branch: true
           add-paths: README.md # This is here just to force it to not commit anything
           title: "${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources"
