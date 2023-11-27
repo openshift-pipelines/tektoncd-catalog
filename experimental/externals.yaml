@@ -5,3 +5,4 @@ repositories:
   types: [ tasks ]
 - url: https://github.com/openshift-pipelines/task-containers
   types: [ tasks ]
+  ignore-versions: [ "v0.1.0" ]

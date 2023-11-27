@@ -43,7 +43,7 @@ func (v *GenerateCmd) Complete(_ *config.Config, args []string) error {
 	}
 
 	if len(args) != 1 {
-		return fmt.Errorf("you must specify a target to generate the catalog in")
+		return fmt.Errorf("you must specify a target to generate the catalog in.")
 	}
 	v.target = args[0]
 	return nil
@@ -83,11 +83,11 @@ func (v *GenerateCmd) Run(cfg *config.Config) error {
 	return catalog.GenerateFilesystem(v.target, c)
 }
 
-// NewGenerateCatalogCmd instantiates the "generate" subcommand.
-func NewGenerateCatalogCmd() runner.SubCommand {
+// NewCatalogGenerateCmd instantiates the "generate" subcommand.
+func NewCatalogGenerateCmd() runner.SubCommand {
 	v := &GenerateCmd{
 		cmd: &cobra.Command{
-			Use:          "generate-catalog",
+			Use:          "generate",
 			Args:         cobra.ExactArgs(1),
 			Long:         generateLongDescription,
 			Short:        "Verifies the resource file signature",

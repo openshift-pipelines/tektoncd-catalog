@@ -1,5 +1,11 @@
 repositories:
 - url: https://github.com/openshift-pipelines/task-git
-  types: [ tasks pipelines ]
+  types:
+  - tasks
+  - pipelines
 - url: https://github.com/openshift-pipelines/task-containers
-  types: [ tasks pipelines ]
+  types:
+  - tasks
+  - pipelines
+  ignore-versions: [ "v0.1.0" ]
+

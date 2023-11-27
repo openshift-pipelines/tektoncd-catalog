@@ -1,7 +1,7 @@
 ---
-# This workflow generates the stable catalog and pushes it to
+# This workflow generates the experimental catalog and pushes it to
 # the publish branch.
-name: generate-catalogs
+name: generate-experimental-catalogs
 
 on:
   schedule:
@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  catalog-matrix:
+  experimental-catalog-matrix:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'openshift-pipelines' # do not run this elsewhere
     outputs:
@@ -22,15 +22,15 @@ jobs:
         name: Generate catalog matrix
         run: |
           set -Eeu
-          echo "matrix=$(go run ./cmd/catalog-cd catalog externals --config ./externals.yaml)" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(go run ./cmd/catalog-cd catalog externals --config ./experimental/externals.yaml)" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
-  generate-catalog:
-    needs: catalog-matrix
+  generate-experimental-catalog:
+    needs: experimental-catalog-matrix
     runs-on: ubuntu-latest
     if: github.repository_owner == 'openshift-pipelines' # do not run this elsewhere
     strategy:
-      matrix: ${{fromJSON(needs.catalog-matrix.outputs.matrix)}}
+      matrix: ${{fromJSON(needs.experimental-catalog-matrix.outputs.matrix)}}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/go
@@ -38,15 +38,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p stable/tasks stable/pipelines
-          cp -fR tasks/* stable/tasks
-          cp -fR pipelines/* stable/pipelines
+          mkdir -p experimental/tasks experimental/pipelines
+          cp -fR tasks/* experimental/tasks
+          cp -fR pipelines/* experimental/pipelines
           go run ./cmd/catalog-cd catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
                  --type ${{ matrix.type }} \
                  --ignore-versions "${{ matrix.ignoreVersions }}" \
-                 stable
+                 experimental
       - name: Checkout "p" publish branch
         uses: actions/checkout@v4
         with:
@@ -55,7 +55,7 @@ jobs:
           path: p
       - name: Copy "partial" catalog ${{ matrix.name }} in publish branch
         run: |
-          cp -fRv stable/* p/
+          cp -fRv experimental/* p/experimental/
       - name: Add ${{ matrix.type }} from ${{ matrix.name }} to publish branch
         working-directory: p
         run: |
@@ -65,8 +65,8 @@ jobs:
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
             git status
-            git add tasks pipelines
-            git commit -m "${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources\n\nURL: ${{ matrix.url }}\\nIgnoredVersions: ${{ matrix.ignoreVersions }}"
+            git add experimental/tasks experimental/pipelines
+            git commit -m "experimental/${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources\n\nURL: ${{ matrix.url }}\\nIgnoredVersions: ${{ matrix.ignoreVersions }}"
             git pull --rebase --autostash
           else
             echo "No changes for the catalog"
@@ -76,10 +76,10 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           base: p
-          branch: update-stable
+          branch: update-experimental
           delete-branch: true
           add-paths: README.md # This is here just to force it to not commit anything
-          title: "${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources"
+          title: "experimental/${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources"
           assignees: tekton-ecosystem-team
           labels: approved, lgtm, ok-to-test # Automatically approved :)
           # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
@@ -87,6 +87,6 @@ jobs:
           # body: ${{ steps.pr_body.outputs.content }} # TODO(vdemeester) Write git status from the artifact
       - uses: actions/upload-artifact@v3 # We could ignore this completely
         with:
-          name: ${{ matrix.name }}-${{ matrix.type }}-stable-catalog-artifact
-          path: stable/
+          name: ${{ matrix.name }}-${{ matrix.type }}-experimental-catalog-artifact
+          path: experimental/
           retention-days: 3 # We don't need to keep them for long
