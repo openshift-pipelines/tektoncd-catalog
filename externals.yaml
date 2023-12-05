@@ -3,6 +3,14 @@ repositories:
   types:
   - tasks
   - pipelines
+- url: https://github.com/openshift-pipelines/task-maven
+  types:
+  - tasks
+  - pipelines
+- url: https://github.com/openshift-pipelines/task-openshift
+  types:
+  - tasks
+  - pipelines
 - url: https://github.com/openshift-pipelines/task-containers
   types:
   - tasks
