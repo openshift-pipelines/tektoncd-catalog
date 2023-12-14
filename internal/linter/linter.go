@@ -30,7 +30,9 @@ func (l *Linter) workspaces() error {
 		return err
 	}
 	if err = lowercaseSliceMapLinter(wbs); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidWorkspace, err)
+		// return fmt.Errorf("%w: %w", ErrInvalidWorkspace, err)
+		l.cfg.Errorf("%s: %s", ErrInvalidWorkspace, err)
+		return nil
 	}
 	l.cfg.Infof("# Workspaces are following best practices!\n")
 	return nil
@@ -44,7 +46,9 @@ func (l *Linter) params() error {
 		return err
 	}
 	if err = uppercaseSliceMapLinter(ps); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidParam, err)
+		// return fmt.Errorf("%w: %w", ErrInvalidParam, err)
+		l.cfg.Errorf("%s: %s", ErrInvalidParam, err)
+		return nil
 	}
 	l.cfg.Infof("# Params are following best practices!\n")
 	return nil
@@ -58,7 +62,9 @@ func (l *Linter) results() error {
 		return err
 	}
 	if err = uppercaseSliceMapLinter(rs); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidResult, err)
+		// return fmt.Errorf("%w: %w", ErrInvalidResult, err)
+		l.cfg.Errorf("%s: %s", ErrInvalidResult, err)
+		return nil
 	}
 	l.cfg.Infof("# Results are following best practices!\n")
 	return nil
