@@ -85,7 +85,7 @@ jobs:
           # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
           # author: ${{ env.GIT_AUTHOR_NAME }} ${{ env.GIT_AUTHOR_EMAIL }}
           # body: ${{ steps.pr_body.outputs.content }} # TODO(vdemeester) Write git status from the artifact
-      - uses: actions/upload-artifact@v3 # We could ignore this completely
+      - uses: actions/upload-artifact@v4 # We could ignore this completely
         with:
           name: ${{ matrix.name }}-${{ matrix.type }}-experimental-catalog-artifact
           path: experimental/
