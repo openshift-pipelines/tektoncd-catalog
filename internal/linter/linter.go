@@ -2,7 +2,7 @@ package linter
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/config"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/resource"
