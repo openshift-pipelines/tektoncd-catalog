@@ -80,8 +80,8 @@ jobs:
       - name: Create PR
         id: create-pr
         uses: peter-evans/create-pull-request@v5
-        working-directory: p
         with:
+          path: p
           base: p
           branch: update-stable-${{ matrix.name }}-${{ matrix.type }}
           delete-branch: true
@@ -93,8 +93,7 @@ jobs:
           # author: ${{ env.GIT_AUTHOR_NAME }} ${{ env.GIT_AUTHOR_EMAIL }}
           # body: ${{ steps.pr_body.outputs.content }} # TODO(vdemeester) Write git status from the artifact
       - uses: actions/upload-artifact@v4 # We could ignore this completely
-        working-directory: p
         with:
           name: ${{ matrix.name }}-${{ matrix.type }}-stable-catalog-artifact
-          path: .
+          path: p/
           retention-days: 3 # We don't need to keep them for long
