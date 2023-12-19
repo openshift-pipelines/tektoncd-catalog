@@ -59,7 +59,9 @@ jobs:
           path: p
       - name: Copy "partial" catalog ${{ matrix.name }} in publish branch
         run: |
+          cat experimental/tasks/artifacthub-repo.yaml
           cp -fRv experimental/* p/experimental/
+          cat p/experimental/tasks/artifacthub-repo.yaml
       - name: Add ${{ matrix.type }} from ${{ matrix.name }} to publish branch
         working-directory: p
         run: |
