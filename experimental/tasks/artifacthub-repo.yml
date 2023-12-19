@@ -1,10 +1,7 @@
-repositoryID: 6b1e3fa7-3d04-47d2-9b3e-14009e0d52b3
+repositoryID: 0b580f09-c7b5-4c62-9f67-4208d4da28e3
 owners:
   - name: vdemeester
     email: vdemeest@redhat.com
-ignore:
-- name: go-ko-image
-  version: v0.2.0 # This release is not working (wrong image)
 #ignore: # (optional, packages that should not be indexed by Artifact Hub)
 #  - name: package1
 #  - name: package2 # Exact match
