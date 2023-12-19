@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cli/go-gh/v2/pkg/api"
 	"github.com/openshift-pipelines/tektoncd-catalog/internal/fetcher"
@@ -44,12 +45,12 @@ func FetchFromExternals(e config.External, client *api.RESTClient) (Catalog, err
 	return c, nil
 }
 
-func GenerateFilesystem(path string, c Catalog) error {
+func GenerateFilesystem(path string, c Catalog, resourceType string) error {
 	for name, resource := range c.Resources {
 		fmt.Fprintf(os.Stderr, "# Fetching resources from %s\n", name)
 		for version, uri := range resource {
 			fmt.Fprintf(os.Stderr, "## Fetching version %s\n", version)
-			if err := fetchAndExtract(path, uri, version); err != nil {
+			if err := fetchAndExtract(path, uri, version, resourceType); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to fetch resource %s: %v, skipping\n", uri, err)
 				continue
 			}
@@ -58,7 +59,7 @@ func GenerateFilesystem(path string, c Catalog) error {
 	return nil
 }
 
-func fetchAndExtract(path, url, version string) error {
+func fetchAndExtract(path, url, version, resourceType string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -66,10 +67,10 @@ func fetchAndExtract(path, url, version string) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Status error: %v", resp.StatusCode)
 	}
-	return untar(path, version, resp.Body)
+	return untar(path, version, resourceType, resp.Body)
 }
 
-func untar(dst, version string, r io.Reader) error {
+func untar(dst, version, resourceType string, r io.Reader) error {
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
 		return err
@@ -96,6 +97,13 @@ func untar(dst, version string, r io.Reader) error {
 		filename := filepath.Base(header.Name)
 		targetFolder := filepath.Join(dst, filepath.Dir(header.Name), version)
 		target := filepath.Join(targetFolder, filename)
+
+		if resourceType != "" {
+			if !strings.HasPrefix(header.Name, resourceType) {
+				fmt.Fprintf(os.Stderr, "### Ignoring %s (type not %s)\n", header.Name, resourceType)
+				continue
+			}
+		}
 
 		if err := os.MkdirAll(targetFolder, os.ModePerm); err != nil {
 			return err

@@ -82,7 +82,6 @@ func (v *GenerateFromExternalCmd) Run(cfg *config.Config) error {
 		Repositories: []fc.Repository{{
 			Name:           name,
 			URL:            v.url,
-			Types:          []string{v.resourceType},
 			IgnoreVersions: ignoreVersions,
 		}},
 	}
@@ -91,7 +90,7 @@ func (v *GenerateFromExternalCmd) Run(cfg *config.Config) error {
 		return err
 	}
 
-	return catalog.GenerateFilesystem(v.target, c)
+	return catalog.GenerateFilesystem(v.target, c, v.resourceType)
 }
 
 // NewCatalogGenerateFromExternalCmd instantiates the "generate" subcommand.

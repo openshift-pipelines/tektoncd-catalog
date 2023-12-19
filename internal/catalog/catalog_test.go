@@ -109,7 +109,7 @@ func TestGenerateFilesystem(t *testing.T) {
 		// 	},
 		// },
 	}
-	err := catalog.GenerateFilesystem(dir.Path(), c)
+	err := catalog.GenerateFilesystem(dir.Path(), c, "")
 	if err != nil {
 		t.Fatal(err)
 	}

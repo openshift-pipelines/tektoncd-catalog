@@ -80,7 +80,7 @@ func (v *GenerateCmd) Run(cfg *config.Config) error {
 		return err
 	}
 
-	return catalog.GenerateFilesystem(v.target, c)
+	return catalog.GenerateFilesystem(v.target, c, "")
 }
 
 // NewCatalogGenerateCmd instantiates the "generate" subcommand.
