@@ -45,8 +45,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p stable/tasks stable/pipelines
-          cp -fR tasks/* stable/tasks
-          cp -fR pipelines/* stable/pipelines
+          cp -fRv tasks/* stable/tasks
+          cp -fRv pipelines/* stable/pipelines
           go run ./cmd/catalog-cd catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
