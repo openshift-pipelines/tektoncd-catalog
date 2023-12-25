@@ -24,7 +24,7 @@ jobs:
     - name: build catalog-cd
       run: go build -o catalog-cd -v ./cmd/catalog-cd
     - name: Upload catalog-cd binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: catalog-cd-bin
         path: catalog-cd
