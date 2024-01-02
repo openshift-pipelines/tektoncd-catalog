@@ -1,6 +1,9 @@
 ---
 name: build-images
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
@@ -20,7 +23,7 @@ jobs:
     outputs:
       images: ${{ steps.output-images.outputs.images }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
       - name: list images
         id: output-images
         run: |
@@ -36,12 +39,12 @@ jobs:
       matrix:
         image: ${{fromJSON(needs.list.outputs.images)}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
         with:
           fetch-depth: 2
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@56284d80811fb5963a972b438f2870f175e5b7c8 # v40
         with:
           files: |
             images/${{ matrix.image }}/**
@@ -52,7 +55,7 @@ jobs:
           echo "List all the files that have changed: ${{ steps.changed-files-specific.outputs.all_changed_files }}"
       - name: Log in to the Container registry
         if: steps.changed-files.outputs.any_changed == 'true' || github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # 343f7c4344506bcbf9b4de18042ae17996df046d
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -60,12 +63,12 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         if: steps.changed-files.outputs.any_changed == 'true' || github.event_name != 'pull_request'
         id: meta
-        uses: docker/metadata-action@9dc751fe249ad99385a2583ee0d084c400eee04e
+        uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4 # v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image }}
       - name: Build and push Docker image
         if: steps.changed-files.outputs.any_changed == 'true' || github.event_name != 'pull_request'
-        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5
         with:
           context: images/${{ matrix.image }}
           push: ${{ github.event_name != 'pull_request' }}

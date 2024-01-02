@@ -1,9 +1,11 @@
-
 on:
   pull_request:
     branches: [ main ]
   push:
     branches: [ main ]
+
+permissions:
+  contents: read
 
 name: build-test
 
@@ -11,20 +13,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.20.x
-    - run: go env
-    - name: go build
-      run: go build -v ./...
-    - name: go test
-      run: go test -v ./...
-    - name: build catalog-cd
-      run: go build -o catalog-cd -v ./cmd/catalog-cd
-    - name: Upload catalog-cd binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: catalog-cd-bin
-        path: catalog-cd
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - name: Set up Go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        with:
+          go-version: 1.20.x
+      - run: go env
+      - name: go build
+        run: go build -v ./...
+      - name: go test
+        run: go test -v ./...
+      - name: build catalog-cd
+        run: go build -o catalog-cd -v ./cmd/catalog-cd
+      - name: Upload catalog-cd binary
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3
+        with:
+          name: catalog-cd-bin
+          path: catalog-cd

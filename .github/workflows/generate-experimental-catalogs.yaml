@@ -6,7 +6,8 @@ name: generate-experimental-catalogs
 on:
   schedule:
     - cron: "0 */6 * * *" # every 6 hours
-  workflow_dispatch: # allow manual triggering
+  workflow_dispatch:
+    # allow manual triggering
 
 jobs:
 
@@ -16,8 +17,8 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
         with:
           go-version: 1.20.x
           cache: true
@@ -35,8 +36,8 @@ jobs:
     strategy:
       matrix: ${{fromJSON(needs.experimental-catalog-matrix.outputs.matrix)}}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
         with:
           go-version: 1.20.x
           cache: true
@@ -52,7 +53,7 @@ jobs:
                  --ignore-versions "${{ matrix.ignoreVersions }}" \
                  experimental
       - name: Checkout "p" publish branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
         with:
           repository: openshift-pipelines/tektoncd-catalog
           ref: p
@@ -78,7 +79,7 @@ jobs:
           fi
       - name: Create PR
         id: create-pr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38 # v5
         with:
           path: p
           base: p
@@ -91,7 +92,7 @@ jobs:
           # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
           # author: ${{ env.GIT_AUTHOR_NAME }} ${{ env.GIT_AUTHOR_EMAIL }}
           # body: ${{ steps.pr_body.outputs.content }} # TODO(vdemeester) Write git status from the artifact
-      - uses: actions/upload-artifact@v4 # We could ignore this completely
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4
         with:
           name: ${{ matrix.name }}-${{ matrix.type }}-experimental-catalog-artifact
           path: p/experimental/
