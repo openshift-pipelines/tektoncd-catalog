@@ -1,0 +1,149 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: go-crane-image
+  labels:
+    app.kubernetes.io/version: "0.5.0"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.50.0"
+    tekton.dev/categories: language
+    tekton.dev/tags: go
+    tekton.dev/displayName: "go crane image"
+    tekton.dev/platforms: "linux/amd64,linux/arm64"
+spec:
+  description: >-
+    The go-crane-image Task will build a container image based of off a go project to be compiled, using crane.
+  workspaces:
+    - name: source
+      description: The go source to build
+    - name: dockerconfig
+      description: Includes a docker `config.json` or `.dockerconfigjson`
+      optional: true
+  params:
+    - name: app
+      description: >-
+        The name of the "application" to build. This will have an impact on the binary and possibly the image reference
+    - name: package
+      description: >-
+        The package to build. It needs to be a package `main` that compiles into a binary. The default value is `.`, usual value can be `./cmd/{name}`
+      default: .
+    - name: image
+      description: >-
+        The image specific options such as prefix, labels, env, …
+      type: object
+      properties:
+        base: {type: string}
+        labels: {type: string}
+        envs: {type: string}
+        push: {type: string}
+        prefix: {type: string}
+        tag: {type: string}
+      default:
+        base: ""
+        labels: ""
+        envs: ""
+        push: "true"
+        tag: "latest"
+    - name: go
+      description: >-
+        Golang options, such as flags, …
+      type: object
+      properties:
+        GOFLAGS: {type: string}
+        GOOS: {type: string}
+        GOARCH: {type: string}
+        CGO_ENABLED: {type: string}
+      default:
+        GOFLAGS: "-v"
+        GOOS: ""
+        GOARCH: ""
+        CGO_ENABLED: "0"
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the image just built.
+    - name: IMAGE_URL
+      description: URL of the image just built.
+  steps:
+    - name: build-go
+      image: ghcr.io/shortbrain/golang-tasks/go-1.21:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        git config --global --add safe.directory $(workspaces.source.path)
+
+        go env
+        go build -o $(params.app) $(params.package)
+      env:
+        - name: GOFLAGS
+          value: "$(params.go.GOFLAGS)"
+        - name: GOOS
+          value: "$(params.go.GOOS)"
+        - name: GOARCH
+          value: "$(params.go.GOARCH)"
+        - name: CGO_ENABLED
+          value: "$(params.go.CGO_ENABLED)"
+    - name: publish-image
+      image: ghcr.io/shortbrain/golang-tasks/crane:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        if [[ "$(params.image.push)" == "false" ]]; then
+          echo "Not doing anything as push is disabled"
+          echo -n "" > $(resutls.IMAGE_DIGEST.path)
+          echo -n "" > $(resutls.IMAGE_URL.path)
+          exit 0
+        fi
+
+        # Prepare the layer to add
+        mkdir output
+        cp $(params.app) ./output
+        # FIXME: extra things to copy ?
+
+        if [[ "$(workspaces.dockerconfig.bound)" == "true" ]]; then
+          # if config.json exists at workspace root, we use that
+          if test -f "$(workspaces.dockerconfig.path)/config.json"; then
+            export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
+          # else we look for .dockerconfigjson at the root
+          elif test -f "$(workspaces.dockerconfig.path)/.dockerconfigjson"; then
+            cp "$(workspaces.dockerconfig.path)/.dockerconfigjson" "$HOME/.docker/config.json"
+            export DOCKER_CONFIG="$HOME/.docker"
+          # need to error out if neither files are present
+          else
+            echo "neither 'config.json' nor '.dockerconfigjson' found at workspace root"
+            exit 1
+          fi
+        fi
+
+        APPEND_FLAGS="--new_tag $(params.image.prefix)/$(params.app):$(params.image.tag)"
+        if [[ -n "$(params.image.base)" ]]; then
+          APPEND_FLAGS="--base $(params.image.base) ${APPEND_FLAGS}"
+        fi
+
+        MUTATE_FLAGS="--entrypoint=/$(params.app) --tag $(params.image.prefix)/$(params.app):$(params.image.tag)"
+        # envs
+        while IFS=';' read -ra ENVS; do
+        for ENV in "${ENVS[@]}"; do
+          MUTATE_FLAGS="${MUTATE_FLAGS} --env ${ENV}"
+        done
+        done <<< "$(params.image.envs)"
+
+        # labels
+        while IFS=';' read -ra LABELS; do
+        for LABEL in "${LABELS[@]}"; do
+          MUTATE_FLAGS="${MUTATE_FLAGS} --label ${LABEL}"
+        done
+        done <<< "$(params.image.labels)"
+
+        crane mutate $( \
+          crane append ${APPEND_FLAGS} \
+            --new_layer <(cd ./output && tar -f - -c .) \
+          ) \
+          ${MUTATE_FLAGS} > crane_output
+        CRANE_OUTPUT=$(cat crane_output)
+        echo -n ${CRANE_OUTPUT#*@} > $(results.IMAGE_DIGEST.path)
+        echo -n ${CRANE_OUTPUT} > $(results.IMAGE_URL.path)
+        # echo -n ${CRANE_OUTPUT%@*} > $(results.IMAGE_URL.path)
