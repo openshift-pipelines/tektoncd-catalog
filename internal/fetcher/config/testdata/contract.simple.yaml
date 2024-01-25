@@ -1,6 +1,0 @@
-version: 0
-tasks:
-- name: git-clone
-  file: task-git-0.0.1.yaml
-  bundle: ghcr.io/openshift-pipelines/task-git:0.0.1-bundle
-

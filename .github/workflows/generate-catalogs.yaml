@@ -26,7 +26,7 @@ jobs:
         name: Generate catalog matrix
         run: |
           set -Eeu
-          echo "matrix=$(go run ./cmd/catalog-cd catalog externals --config ./externals.yaml)" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(go run github.com/openshift-pipelines/catalog-cd@main catalog externals --config ./externals.yaml)" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
   generate-catalog:
@@ -48,7 +48,7 @@ jobs:
           mkdir -p stable/tasks stable/pipelines
           cp -fRv tasks/* stable/tasks
           cp -fRv pipelines/* stable/pipelines
-          go run ./cmd/catalog-cd catalog generate-from \
+          go run github.com/openshift-pipelines/catalog-cd@main catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
                  --type ${{ matrix.type }} \
