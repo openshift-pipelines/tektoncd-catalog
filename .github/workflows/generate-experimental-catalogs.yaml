@@ -18,15 +18,14 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
-        with:
-          go-version: 1.20.x
-          cache: true
       - id: set-matrix
         name: Generate catalog matrix
         run: |
           set -Eeu
-          echo "matrix=$(go run github.com/openshift-pipelines/catalog-cd@main catalog externals --config ./experimental/externals.yaml)" >> "$GITHUB_OUTPUT"
+          echo "Installing catalog-cd 0.1.0"
+          curl -fsL https://github.com/openshift-pipelines/catalog-cd/releases/download/v0.1.0/catalog-cd_0.1.0_linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin catalog-cd
+
+          echo "matrix=$(catalog-cd catalog externals --config ./experimental/externals.yaml)" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
   generate-experimental-catalog:
@@ -37,16 +36,16 @@ jobs:
       matrix: ${{fromJSON(needs.experimental-catalog-matrix.outputs.matrix)}}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
-        with:
-          go-version: 1.20.x
-          cache: true
       - name: ${{ matrix.type }} catalog for ${{ matrix.name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -Eeu
+          echo "Installing catalog-cd 0.1.0"
+          curl -fsL https://github.com/openshift-pipelines/catalog-cd/releases/download/v0.1.0/catalog-cd_0.1.0_linux_x86_64.tar.gz | sudo tar xzf - -C /usr/local/bin catalog-cd
+
           mkdir -p experimental/tasks experimental/pipelines
-          go run github.com/openshift-pipelines/catalog-cd@main catalog generate-from \
+          catalog-cd catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
                  --type ${{ matrix.type }} \
