@@ -8,10 +8,10 @@ This is the home of the catalog of Red Hat Tekton resources. The repository cont
 These `Task` and `Pipeline` are coming from the external repositories releases, maintained by different teams from Red Hat and partners. See [here](https://github.com/openshift-pipelines/tektoncd-catalog/blob/main/externals.yaml) to know where they are pulled from.
 
 As of today, they are indexed by [ArtifactHub][artifactHub] in several catalogs:
-- [redhat-tekton-tasks][artifactHubRedHatTasks] [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/redhat-tekton-tasks)](https://artifacthub.io/packages/search?repo=redhat-tekton-tasks)
-- [redhat-tekton-pipelines][artifactHubRedHatPipelines] [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/redhat-tekton-pipelines)](https://artifacthub.io/packages/search?repo=redhat-tekton-pipelines)
-- [redhat-tekton-experimental-tasks][artifactHubRedHatExperimentalTasks] [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/redhat-tekton-experimental-tasks)](https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-tasks)
-- [redhat-tekton-experimental-pipelines][artifactHubRedHatExperimentalPipelines] [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/redhat-tekton-experimental-pipelines)](https://artifacthub.io/packages/search?repo=redhat-tekton-experimental-pipelines)
+- [redhat-tekton-tasks][artifactHubRedHatTasks]
+- [redhat-tekton-pipelines][artifactHubRedHatPipelines]
+- [redhat-tekton-experimental-tasks][artifactHubRedHatExperimentalTasks]
+- [redhat-tekton-experimental-pipelines][artifactHubRedHatExperimentalPipelines]
 
 The `main` branch of the repository contains the configuration and tooling to maintain the catalog. The [`p` branch][pBranch] is where the the catalog gets "persisted" and should be consumed.
 
