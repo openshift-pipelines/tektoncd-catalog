@@ -16,4 +16,7 @@ repositories:
   - tasks
   - pipelines
   ignore-versions: [ "v0.1.0" ]
-
+- url: https://github.com/kubevirt/kubevirt-tekton-tasks
+  types:
+  - tasks
+  - pipelines
