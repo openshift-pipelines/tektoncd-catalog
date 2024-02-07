@@ -16,4 +16,7 @@ repositories:
   - tasks
   - pipelines
   ignore-versions: [ "v0.1.0" ]
-
+- url: https://github.com/openshift-cnv/openshift-virtualization-pipelines-tasks
+  types:
+  - tasks
+  - pipelines
