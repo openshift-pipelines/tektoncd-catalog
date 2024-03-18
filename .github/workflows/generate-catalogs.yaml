@@ -77,7 +77,7 @@ jobs:
           fi
       - name: Create PR
         id: create-pr
-        uses: peter-evans/create-pull-request@a4f52f8033a6168103c2538976c07b467e8163bc # v5
+        uses: peter-evans/create-pull-request@70a41aba780001da0a30141984ae2a0c95d8704e # v5
         with:
           path: p
           base: p
