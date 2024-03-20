@@ -16,7 +16,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: 4.15.0
+    app.kubernetes.io/version: v4.15.0
   name: modify-data-object
 spec:
   description: >-
@@ -57,7 +57,7 @@ spec:
       description: The namespace of the data object that was created.
   steps:
     - name: modify-data-object
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:4.15.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:v4.15.0"
       command:
         - modify-data-object
       args:

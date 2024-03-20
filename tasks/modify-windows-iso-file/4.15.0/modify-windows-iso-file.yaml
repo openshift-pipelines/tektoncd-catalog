@@ -16,7 +16,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: 4.15.0
+    app.kubernetes.io/version: v4.15.0
   name: modify-windows-iso-file
 spec:
   description: >-
@@ -26,7 +26,7 @@ spec:
     continue with installation until some key is pressed. The non prompt 
     bootloader will not require any key press. This task is used in 
     combination with KubeVirt. It is part of windows-efi-installer pipeline 
-    https://github.com/kubevirt/kubevirt-tekton-tasks/tree/main/examples/pipelines/windows-efi-installer.
+    https://github.com/kubevirt/kubevirt-tekton-tasks/tree/main/release/pipelines/windows-efi-installer.
   params:
     - name: pvcName
       description: PersistentVolumeClaim which contains windows iso.
@@ -39,7 +39,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:4.15.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:v4.15.0"
       script: |
         #!/bin/bash
         set -x
@@ -84,7 +84,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:4.15.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:v4.15.0"
       script: |
         #!/bin/bash
         set -ex
@@ -111,7 +111,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:4.15.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:v4.15.0"
       script: |
         #!/bin/bash
         set -x
