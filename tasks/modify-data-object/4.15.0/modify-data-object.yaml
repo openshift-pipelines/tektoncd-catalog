@@ -16,7 +16,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.15.0
+    app.kubernetes.io/version: 4.15.0
   name: modify-data-object
 spec:
   description: >-

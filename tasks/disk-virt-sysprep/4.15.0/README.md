@@ -34,7 +34,7 @@ spec:
         -   name: name
             value: disk-virt-sysprep
         -   name: version
-            value: v4.15.0
+            value: 4.15.0
         resolver: hub
 ```
 
