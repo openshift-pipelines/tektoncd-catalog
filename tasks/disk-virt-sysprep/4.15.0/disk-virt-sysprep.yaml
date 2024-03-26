@@ -39,7 +39,7 @@ spec:
       default: ""
   steps:
     - name: run-virt-sysprep
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:v4.15.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9:v4.15.0"
       command:
         - entrypoint
       args:
