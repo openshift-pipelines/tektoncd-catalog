@@ -1,0 +1,115 @@
+---
+# Source: task-maven/templates/task-maven.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: maven
+  labels:
+    app.kubernetes.io/version: 0.2.0
+  annotations:
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: containers
+    tekton.dev/pipelines.minVersion: 0.41.0
+    tekton.dev/tags: containers
+spec:
+  description: >-
+    This Task can be used to run a Maven build.
+
+  workspaces:
+    - name: source
+      optional: false
+      description: The workspace consisting of maven project.
+    - name: sever_secret
+      optional: true
+      description: The workspace containing server secrets (user and password file)
+
+  params:
+    - name: GOALS
+      description: maven goals to run
+      type: array
+      default:
+        - "package"
+    - name: MAVEN_MIRROR_URL
+      description: The Maven repository mirror url
+      type: string
+      default: ""
+    - name: SUBDIRECTORY
+      type: string
+      description: >-
+        The subdirectory within the repository for sources on
+        which we want to execute maven goals.
+      default: "."
+
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_MAVEN_MIRROR_URL
+        value: "$(params.MAVEN_MIRROR_URL)"
+      - name: PARAMS_SUBDIRECTORY
+        value: "$(params.SUBDIRECTORY)"
+      - name: WORKSPACES_SOURCE_PATH
+        value: "$(workspaces.source.path)"
+      - name: WORKSPACES_SOURCE_BOUND
+        value: "$(workspaces.source.bound)"
+      - name: WORKSPACES_SERVER_SECRET_PATH
+        value: "$(workspaces.server_secret.path)"
+      - name: WORKSPACES_SERVER_SECRET_BOUND
+        value: "$(workspaces.server_secret.bound)"
+
+  steps:
+    - name: load-scripts
+      image: registry.access.redhat.com/ubi8/ubi-minimal:8.9
+      workingDir: /scripts
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggTUFWRU5fR0VORVJBVEVfRElSRUNUT1JZPSIke1dPUktTUEFDRVNfU09VUkNFX1BBVEh9L21hdmVuLWdlbmVyYXRlIgoKZGVjbGFyZSAtcnggTUFWRU5fU0VUVElOR1NfRklMRT0iJHtNQVZFTl9HRU5FUkFURV9ESVJFQ1RPUll9L3NldHRpbmdzLnhtbCIKCmlmIFtbIC1mICR7TUFWRU5fU0VUVElOR1NfRklMRX0gXV07IHRoZW4KICAgIGVjaG8gInVzaW5nIGV4aXN0aW5nICcke01BVkVOX1NFVFRJTkdTX0ZJTEV9JyIKICAgIGNhdCAke01BVkVOX1NFVFRJTkdTX0ZJTEV9CiAgICBleGl0IDAKZmkKCm1rZGlyICIke01BVkVOX0dFTkVSQVRFX0RJUkVDVE9SWX0iCgpjYXQgPiAiJHtNQVZFTl9TRVRUSU5HU19GSUxFfSIgPDxFT0YKPHNldHRpbmdzPgogICAgPHNlcnZlcnM+CiAgICA8IS0tIFRoZSBzZXJ2ZXJzIGFkZGVkIGhlcmUgYXJlIGdlbmVyYXRlZCBmcm9tIGVudmlyb25tZW50IHZhcmlhYmxlcy4gRG9uJ3QgY2hhbmdlLiAtLT4KICAgIDwhLS0gIyMjIFNFUlZFUidzIFVTRVIgSU5GTyBmcm9tIEVOViAjIyMgLS0+CiAgICA8L3NlcnZlcnM+CiAgICA8bWlycm9ycz4KICAgIDwhLS0gVGhlIG1pcnJvcnMgYWRkZWQgaGVyZSBhcmUgZ2VuZXJhdGVkIGZyb20gZW52aXJvbm1lbnQgdmFyaWFibGVzLiBEb24ndCBjaGFuZ2UuIC0tPgogICAgPCEtLSAjIyMgbWlycm9ycyBmcm9tIEVOViAjIyMgLS0+CiAgICA8L21pcnJvcnM+CiAgICA8cHJveGllcz4KICAgIDwhLS0gVGhlIHByb3hpZXMgYWRkZWQgaGVyZSBhcmUgZ2VuZXJhdGVkIGZyb20gZW52aXJvbm1lbnQgdmFyaWFibGVzLiBEb24ndCBjaGFuZ2UuIC0tPgogICAgPCEtLSAjIyMgSFRUUCBwcm94eSBmcm9tIEVOViAjIyMgLS0+CiAgICA8L3Byb3hpZXM+Cjwvc2V0dGluZ3M+CkVPRgoKY2F0ICIke01BVkVOX1NFVFRJTkdTX0ZJTEV9IgoKeG1sPSIiCmlmIFsgLW4gIiR7UEFSQU1TX1BST1hZX0hPU1R9IiAtYSAtbiAiJHtQQVJBTVNfUFJPWFlfUE9SVH0iIF07IHRoZW4KICAgIHhtbD0iPHByb3h5PlwKICAgIDxpZD5nZW5wcm94eTwvaWQ+XAogICAgPGFjdGl2ZT50cnVlPC9hY3RpdmU+XAogICAgPHByb3RvY29sPiR7UEFSQU1TX1BST1hZX1BST1RPQ09MfTwvcHJvdG9jb2w+XAogICAgPGhvc3Q+JHtQQVJBTVNfUFJPWFlfSE9TVH08L2hvc3Q+XAogICAgPHBvcnQ+JHtQQVJBTVNfUFJPWFlfUE9SVH08L3BvcnQ+IgogICAgaWYgWyAtbiAiJHtQQVJBTVNfUFJPWFlfVVNFUn0iIC1hIC1uICIke1BBUkFNU19QUk9YWV9QQVNTV09SRH0iIF07IHRoZW4KICAgIHhtbD0iJHhtbFwKICAgICAgICA8dXNlcm5hbWU+JHtQQVJBTVNfUFJPWFlfVVNFUn08L3VzZXJuYW1lPlwKICAgICAgICA8cGFzc3dvcmQ+JHtQQVJBTVNfUFJPWFlfUEFTU1dPUkR9PC9wYXNzd29yZD4iCiAgICBmaQogICAgaWYgWyAtbiAiJHtQQVJBTVNfUFJPWFlfTk9OX1BST1hZX0hPU1RTfSIgXTsgdGhlbgogICAgeG1sPSIkeG1sXAogICAgICAgIDxub25Qcm94eUhvc3RzPiR7UEFSQU1TX1BST1hZX05PTl9QUk9YWV9IT1NUU308L25vblByb3h5SG9zdHM+IgogICAgZmkKICAgIHhtbD0iJHhtbFwKICAgICAgICA8L3Byb3h5PiIKICAgIHNlZCAtaSAic3w8IS0tICMjIyBIVFRQIHByb3h5IGZyb20gRU5WICMjIyAtLT58JHhtbHwiICR7TUFWRU5fU0VUVElOR1NfRklMRX0KZmkKCmlmIFtbICIke1dPUktTUEFDRVNfU0VSVkVSX1NFQ1JFVF9CT1VORH0iID09ICJ0cnVlIiBdXTsgdGhlbgogICAgaWYgdGVzdCAtZiAke1dPUktTUEFDRVNfU0VSVkVSX1NFQ1JFVF9QQVRIfS91c2VybmFtZSAmJiB0ZXN0IC1mJHtXT1JLU1BBQ0VTX1NFUlZFUl9TRUNSRVRfUEFUSH0vcGFzc3dvcmQ7IHRoZW4KCVNFUlZFUl9VU0VSPSQoY2F0ICR7V09SS1NQQUNFU19TRVJWRVJfU0VDUkVUX1BBVEh9L3VzZXJuYW1lKQoJU0VSVkVSX1BBU1NXT1JEPSQoY2F0ICR7V09SS1NQQUNFU19TRVJWRVJfU0VDUkVUX1BBVEh9L3Bhc3N3b3JkKQoJaWYgWyAtbiAiJHtTRVJWRVJfVVNFUn0iIC1hIC1uICIke1NFUlZFUl9QQVNTV09SRH0iIF07IHRoZW4KCSAgICB4bWw9IjxzZXJ2ZXI+XAogICAgICAgIDxpZD5zZXJ2ZXJpZDwvaWQ+IgoJICAgIHhtbD0iJHhtbFwKICAgICAgICA8dXNlcm5hbWU+JHtTRVJWRVJfVVNFUn08L3VzZXJuYW1lPlwKICAgICAgICA8cGFzc3dvcmQ+JHtTRVJWRVJfUEFTU1dPUkR9PC9wYXNzd29yZD4iCgkgICAgeG1sPSIkeG1sXAogICAgICAgIDwvc2VydmVyPiIKCSAgICBzZWQgLWkgInN8PCEtLSAjIyMgU0VSVkVSJ3MgVVNFUiBJTkZPIGZyb20gRU5WICMjIyAtLT58JHhtbHwiICR7TUFWRU5fU0VUVElOR1NfRklMRX0KCSAgICBlY2hvICJTRVJWRVIgQ3JlZHMgVXBkYXRlZCIKCWZpCiAgICBlbHNlCgllY2hvICJubyAndXNlcicgb3IgJ3Bhc3N3b3JkJyBmaWxlIGZvdW5kIGF0IHdvcmtzcGFjZSBzZXJ2ZXJfc2VjcmV0IgogICAgICAgIGV4aXQgMQogICAgZmkKZmkKCmlmIFsgLW4gIiR7UEFSQU1TX01BVkVOX01JUlJPUl9VUkx9IiBdOyB0aGVuCiAgICB4bWw9IiAgICA8bWlycm9yPlwKICAgIDxpZD5taXJyb3IuZGVmYXVsdDwvaWQ+XAogICAgPHVybD4ke1BBUkFNU19NQVZFTl9NSVJST1JfVVJMfTwvdXJsPlwKICAgIDxtaXJyb3JPZj5jZW50cmFsPC9taXJyb3JPZj5cCiAgICA8L21pcnJvcj4iCiAgICBzZWQgLWkgInN8PCEtLSAjIyMgbWlycm9ycyBmcm9tIEVOViAjIyMgLS0+fCR4bWx8IiAke01BVkVOX1NFVFRJTkdTX0ZJTEV9CmZpCg==" |base64 -d >maven-generate.sh
+        chmod +x maven-*.sh
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+
+    - name: maven-generate
+      image: registry.access.redhat.com/ubi8/ubi-minimal:8.9
+      env:
+        - name: HOME
+          value: /tekton/home
+      command:
+        - /scripts/maven-generate.sh
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: maven-settings-dir
+          mountPath: /maven-generate
+
+    - name: maven-goals
+      env:
+        - name: HOME
+          value: /tekton/home
+      image: registry.access.redhat.com/ubi8/openjdk-11:latest
+      workingDir: $(workspaces.source.path)/$(params.SUBDIRECTORY)
+      command: ["/usr/bin/mvn"]
+      args:
+        - -s
+        - maven-generate/settings.xml
+        - "$(params.GOALS[*])"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      volumeMounts:
+        - name: maven-settings-dir
+          mountPath: /maven-generate
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
+    - name: maven-settings-dir
+      emptyDir: {}
