@@ -1,0 +1,83 @@
+---
+# Source: task-openshift/templates/task-tkn.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: tkn
+  labels:
+    app.kubernetes.io/version: 0.1.0
+  annotations:
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/displayName: CLI
+    tekton.dev/pipelines.minVersion: 0.17.0
+    tekton.dev/tags: cli
+spec:
+  description: >-
+    This task performs operations on Tekton resources using tkn.
+  
+  workspaces:
+    - name: kubeconfig_dir
+      optional: true
+      description: >-
+        An optional workspace that allows you to provide a .kube/config
+        file for tkn to access the cluster. The file should be placed at
+        the root of the Workspace with name kubeconfig.
+
+  params:
+    - name: SCRIPT
+      description: tkn CLI script to execute
+      type: string
+      default: "tkn $@"
+    - name: ARGS
+      type: array
+      description: tkn CLI arguments to run
+      default: ["--help"]
+   
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_SCRIPT
+        value: "$(params.SCRIPT)"
+      - name: WORKSPACES_KUBECONFIG_DIR_BOUND
+        value: "$(workspaces.kubeconfig_dir.bound)"
+      - name: WORKSPACES_KUBECONFIG_DIR_PATH
+        value: "$(workspaces.kubeconfig_dir.path)"
+
+  steps:
+    - name: load-scripts
+      image: registry.access.redhat.com/ubi8-minimal:latest
+      workingDir: /scripts
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0ZWt0b24ncyBob21lIGRpcmVjdG9yeQpkZWNsYXJlIC1yeCBURUtUT05fSE9NRT0iJHtURUtUT05fSE9NRTotL3Rla3Rvbi9ob21lfSIKCiMKIyBGdW5jdGlvbnMKIwoKZnVuY3Rpb24gZmFpbCgpIHsKICAgIGVjaG8gIkVSUk9SOiAkeyp9IiAyPiYxCiAgICBleGl0IDEKfQoKZnVuY3Rpb24gcGhhc2UoKSB7CiAgICBlY2hvICItLS0+IFBoYXNlOiAkeyp9Li4uIgp9CgojIGFzc2VydCBsb2NhbCB2YXJpYWJsZXMgYXJlIGV4cG9yZXRlZCBvbiB0aGUgZW52aXJvbm1lbnQKZnVuY3Rpb24gZXhwb3J0ZWRfb3JfZmFpbCgpIHsKICAgIGRlY2xhcmUgLWEgX3JlcXVpcmVkX3ZhcnM9IiR7QH0iCgogICAgZm9yIHYgaW4gJHtfcmVxdWlyZWRfdmFyc1tAXX07IGRvCiAgICAgICAgW1sgLXogIiR7IXZ9IiBdXSAmJgogICAgICAgICAgICBmYWlsICInJHt2fScgZW52aXJvbm1lbnQgdmFyaWFibGUgaXMgbm90IHNldCEiCiAgICBkb25lCgogICAgcmV0dXJuIDAKfQoK" |base64 -d >common.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKc2hvcHQgLXMgaW5oZXJpdF9lcnJleGl0CnNldCAtZXUgLW8gcGlwZWZhaWwKCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS9jb21tb24uc2giCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS90a24tY29tbW9uLnNoIgoKW1sgIiR7V09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9CT1VORH0iID09ICJ0cnVlIiBdXSAmJiBcCltbIC1mICR7V09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9QQVRIfS9rdWJlY29uZmlnIF1dICYmIFwKZXhwb3J0IEtVQkVDT05GSUc9JHtXT1JLU1BBQ0VTX0tVQkVDT05GSUdfRElSX1BBVEh9L2t1YmVjb25maWcKCiR7UEFSQU1TX1NDUklQVH0K" |base64 -d >tkn-client.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggUEFSQU1TX1NDUklQVD0iJHtQQVJBTVNfU0NSSVBUOi19IgoKZGVjbGFyZSAtcnggV09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9QQVRIPSIke1dPUktTUEFDRVNfS1VCRUNPTkZJR19ESVJfUEFUSDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9CT1VORD0iJHtXT1JLU1BBQ0VTX0tVQkVDT05GSUdfRElSX0JPVU5EOi19IgoKIwojIEFzc2VydGluZyBFbnZpcm9ubWVudAojCgpleHBvcnRlZF9vcl9mYWlsIFwKICAgIFdPUktTUEFDRVNfS1VCRUNPTkZJR19ESVJfQk9VTkQgXAogICAgUEFSQU1TX1NDUklQVCBcCiAgIAo=" |base64 -d >tkn-common.sh
+        chmod +x tkn-*.sh
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+
+    - name: tkn
+      image: registry.redhat.io/openshift-pipelines/pipelines-cli-tkn-rhel8@sha256:72394dfaed68c4b6b490c3c971fb1d9f0139f8656f6672b55b8e02ea98d1298d
+      env:
+        - name: HOME
+          value: /tekton/home
+      command:
+        - /scripts/tkn-client.sh
+      args: ["$(params.ARGS)"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
