@@ -5,6 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/version: "0.5.0"
   annotations:
+    tekton.dev/source: "https://github.com/shortbrain/golang-tasks"
     tekton.dev/pipelines.minVersion: "0.50.0"
     tekton.dev/categories: language
     tekton.dev/tags: go
