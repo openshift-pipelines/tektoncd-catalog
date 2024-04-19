@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/version: 0.2.0
   annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-git"
     tekton.dev/categories: Git
     tekton.dev/displayName: git
     tekton.dev/pipelines.minVersion: 0.41.0
