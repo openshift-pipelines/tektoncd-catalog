@@ -40,7 +40,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:4.15.1"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:4.15.1"
       script: |
         #!/bin/bash
         set -x
@@ -85,7 +85,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:4.15.1"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:4.15.1"
       script: |
         #!/bin/bash
         set -ex
@@ -112,7 +112,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:4.15.1"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9-disk-virt:4.15.1"
       script: |
         #!/bin/bash
         set -x

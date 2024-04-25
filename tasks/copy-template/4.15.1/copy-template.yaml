@@ -52,7 +52,7 @@ spec:
       description: The namespace of a template that was created.
   steps:
     - name: copytemplate
-      image: "registry.access.redhat.com/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:4.15.1"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:4.15.1"
       command:
         - copy-template
       args:
