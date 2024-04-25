@@ -16,6 +16,10 @@ repositories:
   - tasks
   - pipelines
   ignore-versions: [ "v0.1.0" ]
+- url: https://github.com/openshift-pipelines/task-buildpacks
+  types:
+  - tasks
+  - pipelines
 - url: https://github.com/openshift-virtualization/openshift-virtualization-pipelines-tasks
   types:
   - tasks
