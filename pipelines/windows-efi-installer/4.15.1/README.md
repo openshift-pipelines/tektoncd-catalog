@@ -12,7 +12,7 @@ After the ISO is modified it creates a new VirtualMachine which boots from the m
 
 ## Prerequisites
 
-- OpenShift Virtualization `>= v4.12.0`
+- OpenShift Virtualization `>= v4.13.0`
 - OpenShift Pipelines `>= v1.11.0`
 - Apply ConfigMaps with Windows sysprep (or select one which you will need) - examples can be found here: https://github.com/kubevirt/kubevirt-tekton-tasks/tree/main/release/pipelines/windows-efi-installer/configmaps
 
