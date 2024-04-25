@@ -17,7 +17,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: 4.15.1
+    app.kubernetes.io/version: v4.15.1
   name: windows-efi-installer
 spec:
   description: >-
@@ -49,7 +49,7 @@ spec:
       description: Name of the ConfigMap containing the sysprep configuration files (autounattend.xml, etc.). For example windows11-autounattend or windows2022-autounattend. It is possible to provide customize ConfigMaps created by the user too.
       name: autounattendConfigMapName
       type: string
-    - default: registry.redhat.io/container-native-virtualization/virtio-win-rhel9:4.15.1
+    - default: registry.redhat.io/container-native-virtualization/virtio-win-rhel9:v4.15.1
       description: Reference to the containerdisk containing the virtio-win drivers ISO.
       name: virtioContainerDiskName
       type: string
@@ -95,7 +95,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: 4.15.1
+            value: v4.15.1
     - name: modify-windows-iso-file
       params:
         - name: pvcName
@@ -115,7 +115,7 @@ spec:
           - name: name
             value: modify-windows-iso-file
           - name: version
-            value: 4.15.1
+            value: v4.15.1
     - name: create-vm-root-disk
       taskRef:
         resolver: hub
@@ -129,7 +129,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: 4.15.1
+            value: v4.15.1
       params:
         - name: manifest
           value: |-
@@ -218,7 +218,7 @@ spec:
           - name: name
             value: create-vm-from-manifest
           - name: version
-            value: 4.15.1
+            value: v4.15.1
     - name: wait-for-vmi-status
       params:
         - name: vmiName
@@ -243,7 +243,7 @@ spec:
           - name: name
             value: wait-for-vmi-status
           - name: version
-            value: 4.15.1
+            value: v4.15.1
       timeout: 2h0m0s
   finally:
     - name: cleanup-vm
@@ -266,7 +266,7 @@ spec:
           - name: name
             value: cleanup-vm
           - name: version
-            value: 4.15.1
+            value: v4.15.1
       timeout: 10m0s
     - name: delete-imported-iso
       params:
@@ -290,7 +290,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: 4.15.1
+            value: v4.15.1
   results:
     - description: Name of the created base DataVolume
       name: baseDvName
