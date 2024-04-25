@@ -43,7 +43,7 @@ spec:
         -   name: name
             value: copy-template
         -   name: version
-            value: 4.15.1
+            value: v4.15.1
         resolver: hub
 ```
 
