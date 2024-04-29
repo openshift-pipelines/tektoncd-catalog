@@ -23,7 +23,7 @@ jobs:
     outputs:
       images: ${{ steps.output-images.outputs.images }}
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
       - name: list images
         id: output-images
         run: |
@@ -39,7 +39,7 @@ jobs:
       matrix:
         image: ${{fromJSON(needs.list.outputs.images)}}
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
         with:
           fetch-depth: 2
       - name: Get changed files
