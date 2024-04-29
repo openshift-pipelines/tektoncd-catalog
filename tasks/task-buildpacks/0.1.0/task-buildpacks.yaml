@@ -1,0 +1,237 @@
+---
+# Source: task-buildpacks/templates/task.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildpacks
+  labels:
+    app.kubernetes.io/version: 0.1.0
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-buildpacks"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: Image Build
+    tekton.dev/displayName: Buildpacks
+    tekton.dev/pipelines.minVersion: 0.17.0
+    tekton.dev/platforms: linux/amd64
+    tekton.dev/tags: image-build
+spec:
+  description: Tekton Task to build applications from the source-code to container images, using Buildpacks Cloud Native Builder image (CNB). 
+
+  workspaces:
+    - name: source
+      description: |
+        Application source-code.
+    - name: cache
+      optional: true
+      description: |
+        Cache directory, alternative to the `CACHE_IMAGE` param.
+    - name: bindings
+      optional: true
+      description: |
+        Extra bindings, CA certificate bundle files.
+
+  params:
+    - name: IMAGE
+      type: string
+      description: |
+        Application's container image name, and tag.
+    - name: BUILDER_IMAGE
+      type: string
+      default: "docker.io/paketobuildpacks/builder:base"
+      description: |
+        Cloud Native Builder (CNB) container image name (and tag).
+    - name: CNB_PLATFORM_API
+      type: string
+      default: "0.11"
+      description: |
+        Lifecycle platform API compatibility version.
+    - name: SUBDIRECTORY
+      type: string
+      default: ""
+      description: |
+        Alternative `CNB_APP_DIR` directory, relative to the "source"
+        Workspace.
+    - name: ENV_VARS
+      type: array
+      default: []
+      description: |
+        Environment variables to set during "build-time".
+    - name: PROCESS_TYPE
+      type: string
+      default: "web"
+      description: |
+        Application process type.
+    - name: BINDINGS_GLOB
+      type: string
+      default: "*.pem"
+      description: |
+        Extra binding file name(s) (glob expression) present on the `bindings`
+        Workspace to be copied into `SERVICE_BINDING_ROOT` directory.
+    - name: RUN_IMAGE
+      type: string
+      default: ""
+      description: |
+        Reference to a run image to use.
+    - name: CACHE_IMAGE
+      type: string
+      default: ""
+      description: |
+        The name of the persistent cache image (when  cache workspace is not
+        provided).
+    - name: SKIP_RESTORE
+      type: string
+      default: "false"
+      description: |
+        Do not write layer metadata or restore cached layers.
+    - name: USER_ID
+      type: string
+      default: "1000"
+      description: |
+        CNB container image user-id (UID).
+    - name: GROUP_ID
+      type: string
+      default: 1000
+      description: |
+        CNB container image group-id (GID).
+    - name: VERBOSE
+      type: string
+      default: "false"
+      description:
+        Turns on verbose logging, all commands executed will be printed out.
+
+  results:
+    - name: IMAGE_DIGEST
+      description: |
+        Reported `IMAGE` digest.
+    - name: IMAGE_URL
+      description: |
+        Reported fully qualified container image name.
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
+    - name: platform-dir
+      emptyDir: {}
+    - name: layers-dir
+      emptyDir: {}
+    - name: bindings-dir
+      emptyDir: {}
+
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_IMAGE
+        value: "$(params.IMAGE)"
+      - name: PARAMS_BUILDER_IMAGE
+        value: "$(params.BUILDER_IMAGE)"
+      - name: PARAMS_CNB_PLATFORM_API
+        value: "$(params.CNB_PLATFORM_API)"
+      - name: PARAMS_SUBDIRECTORY
+        value: "$(params.SUBDIRECTORY)"
+      - name: PARAMS_PROCESS_TYPE
+        value: "$(params.PROCESS_TYPE)"
+      - name: PARAMS_BINDINGS_GLOB
+        value: "$(params.BINDINGS_GLOB)"
+      - name: PARAMS_RUN_IMAGE
+        value: "$(params.RUN_IMAGE)"
+      - name: PARAMS_CACHE_IMAGE
+        value: "$(params.CACHE_IMAGE)"
+      - name: PARAMS_SKIP_RESTORE
+        value: "$(params.SKIP_RESTORE)"
+      - name: PARAMS_USER_ID
+        value: "$(params.USER_ID)"
+      - name: PARAMS_GROUP_ID
+        value: "$(params.GROUP_ID)"
+      - name: PARAMS_VERBOSE
+        value: "$(params.VERBOSE)"
+      - name: WORKSPACES_SOURCE_PATH
+        value: "$(workspaces.source.path)"
+      - name: WORKSPACES_CACHE_BOUND
+        value: "$(workspaces.cache.bound)"
+      - name: WORKSPACES_CACHE_PATH
+        value: "$(workspaces.cache.path)"
+      - name: WORKSPACES_BINDINGS_BOUND
+        value: "$(workspaces.bindings.bound)"
+      - name: WORKSPACES_BINDINGS_PATH
+        value: "$(workspaces.bindings.path)"
+      - name: RESULTS_IMAGE_DIGEST_PATH
+        value: "$(results.IMAGE_DIGEST.path)"
+      - name: RESULTS_IMAGE_URL_PATH
+        value: "$(results.IMAGE_URL.path)"
+
+  steps:
+    # load all the shell scripts into the "/script" directory, a simple file creation followed by
+    # adding execution permission
+    - name: load-scripts
+      image: docker.io/library/bash:latest
+      workingDir: /scripts
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIwojIEZ1bmN0aW9ucwojCgpmdW5jdGlvbiBmYWlsKCkgewogICAgZWNobyAiRVJST1I6ICR7Kn0iIDI+JjEKICAgIGV4aXQgMQp9CgpmdW5jdGlvbiBwaGFzZSgpIHsKICAgIGVjaG8gIi0tLT4gUGhhc2U6ICR7Kn0uLi4iCn0KCiMKIyBFbnZpcm9ubWVudCBWYXJpYWJsZXMKIwoKZGVjbGFyZSAtcnggUEFSQU1TX0lNQUdFPSIke1BBUkFNU19JTUFHRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0JVSUxERVJfSU1BR0U9IiR7UEFSQU1TX0JVSUxERVJfSU1BR0U6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19DTkJfUExBVEZPUk1fQVBJPSIke1BBUkFNU19DTkJfUExBVEZPUk1fQVBJOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfU1VCRElSRUNUT1JZPSIke1BBUkFNU19TVUJESVJFQ1RPUlk6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19QUk9DRVNTX1RZUEU9IiR7UEFSQU1TX1BST0NFU1NfVFlQRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0JJTkRJTkdTX0dMT0I9IiR7UEFSQU1TX0JJTkRJTkdTX0dMT0I6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19SVU5fSU1BR0U9IiR7UEFSQU1TX1JVTl9JTUFHRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0NBQ0hFX0lNQUdFPSIke1BBUkFNU19DQUNIRV9JTUFHRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX1NLSVBfUkVTVE9SRT0iJHtQQVJBTVNfU0tJUF9SRVNUT1JFOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfVVNFUl9JRD0iJHtQQVJBTVNfVVNFUl9JRDotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0dST1VQX0lEPSIke1BBUkFNU19HUk9VUF9JRDotfSIKZGVjbGFyZSAtcnggUEFSQU1TX1ZFUkJPU0U9IiR7UEFSQU1TX1ZFUkJPU0U6LX0iCgpkZWNsYXJlIC1yeCBXT1JLU1BBQ0VTX1NPVVJDRV9QQVRIPSIke1dPUktTUEFDRVNfU09VUkNFX1BBVEg6LX0iCmRlY2xhcmUgLXJ4IFdPUktTUEFDRVNfQ0FDSEVfQk9VTkQ9IiR7V09SS1NQQUNFU19DQUNIRV9CT1VORDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19DQUNIRV9QQVRIPSIke1dPUktTUEFDRVNfQ0FDSEVfUEFUSDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19CSU5ESU5HU19CT1VORD0iJHtXT1JLU1BBQ0VTX0JJTkRJTkdTX0JPVU5EOi19IgpkZWNsYXJlIC1yeCBXT1JLU1BBQ0VTX0JJTkRJTkdTX1BBVEg9IiR7V09SS1NQQUNFU19CSU5ESU5HU19QQVRIOi19IgoKZGVjbGFyZSAtcnggUkVTVUxUU19JTUFHRV9ESUdFU1RfUEFUSD0iJHtSRVNVTFRTX0lNQUdFX0RJR0VTVF9QQVRIOi19IgpkZWNsYXJlIC1yeCBSRVNVTFRTX0lNQUdFX1VSTF9QQVRIPSIke1JFU1VMVFNfSU1BR0VfVVJMX1BBVEg6LX0iCgojCiMgQWRkaXRpb25hbCBDb25maWd1cmF0aW9uCiMKCiMgZnVsbCBwYXRoIHRvIHRoZSB0YXJnZXQgYXBwbGljYXRpb24gc291cmNlIGNvZGUgZGlyZWN0b3J5CmRlY2xhcmUgLXJ4IFNPVVJDRV9ESVI9IiR7V09SS1NQQUNFU19TT1VSQ0VfUEFUSH0vJHtQQVJBTVNfU1VCRElSRUNUT1JZfSIKCmRlY2xhcmUgLXJ4IFRFS1RPTl9IT01FPSIke1RFS1RPTl9IT01FOi0vdGVrdG9uL2hvbWV9IgoKIyBjb21tb24gYnVpbGRwYWNrcyBjb25maWd1cmF0aW9uIGRpcmVjdG9yaWVzCmRlY2xhcmUgLXggQ05CX0xPR19MRVZFTD0iaW5mbyIKZGVjbGFyZSAtcnggUExBVEZPUk1fRU5WX0RJUj0iJHtQTEFURk9STV9FTlZfRElSOi0vcGxhdGZvcm0vZW52fSIKZGVjbGFyZSAtcnggTEFZRVJTX0RJUj0iJHtMQVlFUlNfRElSOi0vbGF5ZXJzfSIKZGVjbGFyZSAtcnggU0VSVklDRV9CSU5ESU5HX1JPT1Q9IiR7U0VSVklDRV9CSU5ESU5HX1JPT1Q6LS9iaW5kaW5nc30iCmRlY2xhcmUgLXJ4IFJFUE9SVF9UT01MX1BBVEg9IiR7UkVQT1JUX1RPTUxfUEFUSDotJHtMQVlFUlNfRElSfS9yZXBvcnQudG9tbH0iCgojCiMgQXNzZXJ0aW5nIEVudmlyb25tZW50CiMKCmRlY2xhcmUgLXJhIHJlcXVpcmVkX3ZhcnM9KAogICAgV09SS1NQQUNFU19TT1VSQ0VfUEFUSAogICAgUEFSQU1TX0lNQUdFCiAgICBSRVNVTFRTX0lNQUdFX0RJR0VTVF9QQVRICiAgICBSRVNVTFRTX0lNQUdFX1VSTF9QQVRICikKCmZvciB2IGluICIke3JlcXVpcmVkX3ZhcnNbQF19IjsgZG8KICAgIFtbIC16ICIkeyF2fSIgXV0gJiYKICAgICAgICBmYWlsICInJHt2fScgZW52aXJvbm1lbnQgdmFyaWFibGUgaXMgbm90IHNldCEiCmRvbmUKCiMKIyBTZXR0aW5ncwojCgojIG1ha2luZyBzdXJlIHRoZSBsaWZlY3ljbGUgZGlyZWN0b3J5IGlzIHByZXNlbnQgb24gdGhlIHBhdGgKW1sgLWQgIi9jbmIvbGlmZWN5Y2xlIiBdXSAmJiBleHBvcnQgUEFUSD0iJHtQQVRIfTovY25iL2xpZmVjeWNsZSIKCmlmIFtbICIke1BBUkFNU19WRVJCT1NFfSIgPT0gInRydWUiIF1dOyB0aGVuCiAgICBleHBvcnQgQ05CX0xPR19MRVZFTD0iZGVidWciCiAgICBzZXQgLXgKZmkK" |base64 -d >common.sh
+        chmod +x "common.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgUnVucyB0aGUgbGlmZWN5Y2xlICJjcmVhdG9yIiBjb21tYW5kLgojCgpzaG9wdCAtcyBpbmhlcml0X2VycmV4aXQKc2V0IC1ldSAtbyBwaXBlZmFpbAoKc291cmNlICIkKGRpcm5hbWUgJHtCQVNIX1NPVVJDRVswXX0pL2NvbW1vbi5zaCIKCnBoYXNlICJJbnNwZWN0aW5nIHNvdXJjZSBkaXJlY3RvcnkgJyR7U09VUkNFX0RJUn0nIChzdWJkaXJlY3RvcnkgJyR7UEFSQU1TX1NVQkRJUkVDVE9SWX0nKSIKW1sgISAtZCAiJHtTT1VSQ0VfRElSfSIgXV0gJiYKCWZhaWwgImFwcGxpY2F0aW9uIHNvdXJjZSBkaXJlY3RvcnkgJyR7U09VUkNFX0RJUn0nIGlzIG5vdCBmb3VuZCEiCgpkZWNsYXJlIC1yeCBDTkJfUExBVEZPUk1fQVBJPSIke1BBUkFNU19DTkJfUExBVEZPUk1fQVBJfSIKCnBoYXNlICJDcmVhdGluZyB0aGUgaW1hZ2UgJyR7UEFSQU1TX0lNQUdFfScgZnJvbSAnJHtTT1VSQ0VfRElSfScgKEFQST0ke0NOQl9QTEFURk9STV9BUEl9KSIKc2V0IC14CmV4ZWMgY3JlYXRvciBcCgktYXBwPSIke1NPVVJDRV9ESVJ9IiBcCgktcHJvY2Vzcy10eXBlPSIke1BBUkFNU19QUk9DRVNTX1RZUEV9IiBcCgktdWlkPSIke1BBUkFNU19VU0VSX0lEfSIgXAoJLWdpZD0iJHtQQVJBTVNfR1JPVVBfSUR9IiBcCgktbGF5ZXJzPSIvbGF5ZXJzIiBcCgktcGxhdGZvcm09Ii9wbGF0Zm9ybSIgXAoJLXNraXAtcmVzdG9yZT0iJHtQQVJBTVNfU0tJUF9SRVNUT1JFfSIgXAoJLWNhY2hlLWRpcj0iJHtXT1JLU1BBQ0VTX0NBQ0hFX1BBVEh9IiBcCgktY2FjaGUtaW1hZ2U9IiR7UEFSQU1TX0NBQ0hFX0lNQUdFfSIgXAoJLXByZXZpb3VzLWltYWdlPSIke1BBUkFNU19JTUFHRX0iIFwKCS1ydW4taW1hZ2U9IiR7UEFSQU1TX1JVTl9JTUFHRX0iIFwKCS1yZXBvcnQ9IiR7UkVQT1JUX1RPTUxfUEFUSH0iIFwKCS1sb2ctbGV2ZWw9IiR7Q05CX0xPR19MRVZFTH0iIFwKCS1uby1jb2xvciBcCgkke1BBUkFNU19JTUFHRX0K" |base64 -d >creator.sh
+        chmod +x "creator.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgUHJlcGFyYXRpb24gc3RlcCBiZWZvcmUgcnVubmluZyB0aGUgYnVpbGRwYWNrcyBDTkIuCiMKCnNob3B0IC1zIGluaGVyaXRfZXJyZXhpdApzZXQgLWV1IC1vIHBpcGVmYWlsCgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvY29tbW9uLnNoIgoKIyBzY3JpcHQgYXJndW1lbnRzIGZvciBwYXNzaW5nIGVudmlyb25tZW50IHZhcmlibGUga2V5LXZhbHVlIHBhaXJzIChzcGxpdCBieSBlcXVhbCBzaWduKQpkZWNsYXJlIC1yYSBhcmdzPSgke0B9KQoKIwojIFdvcmtzcGFjZXMgT3duZXJzaGlwCiMKCnBoYXNlICJQcmVwYXJpbmcgdGhlIFdvcmtzcGFjZXMsIHNldHRpbmcgdGhlIGV4cGVjdGVkIG93bmVyc2hpcCBhbmQgcGVybWlzc2lvbnMiCgojIGxpc3Qgb2YgZGlyZWN0b3JpZXMgbmVlZGVkIGJ5IHRoZSBjbmIKZGVjbGFyZSAtYSBjbmJfZGlycz0oJHtMQVlFUlNfRElSfSAke1dPUktTUEFDRVNfU09VUkNFX1BBVEh9KQoKIyB3aGVuIHRoZSBjYWNoZSB3b3Jrc3BhY2UgaXMgYm91bmQsIGFkZGluZyB0byB0aGUgbGlzdCBvZiBkaXJlY3RvcmllcwpbWyAiJHtXT1JLU1BBQ0VTX0NBQ0hFX0JPVU5EfSIgPT0gInRydWUiIF1dICYmCiAgICBjbmJfZGlycys9KCR7V09SS1NQQUNFU19DQUNIRV9QQVRIfSkKCmZvciBkIGluICR7Y25iX2RpcnNbQF19OyBkbwogICAgcGhhc2UgIkNoYW5naW5nIG93bmVyc2hpcCBvZiAnJHtkfScgKCcke1BBUkFNU19VU0VSX0lEfToke1BBUkFNU19HUk9VUF9JRH0nKSIKICAgIGNob3duIC1SdiAiJHtQQVJBTVNfVVNFUl9JRH06JHtQQVJBTVNfR1JPVVBfSUR9IiAiJHtkfSIKZG9uZQoKY2htb2QgLXYgNzc1ICIke1dPUktTUEFDRVNfU09VUkNFX1BBVEh9IgoKIwojIENOQiBFbnZpcm9ubWVudCBWYXJpYWJsZXMKIwoKIyBlbnZpcm9ubWVudCB2YXJpYWJsZXMgZXhwZWN0ZWQgdG8gYmUgaW5jbHVkZWQgb24gdGhlIGNvbnRhaW5lciBpbWFnZSBidWlsdCBieSB0aGUgY25iIG11c3QgYmUKIyBkZWZpbmVkIGFzIGZpbGVzIG9uIHRoZSAiL3BsYXRmb3JtL2VudiIgZGlyZWN0b3J5CmlmIFtbICEgLWQgIiR7UExBVEZPUk1fRU5WX0RJUn0iIF1dOyB0aGVuCiAgICBwaGFzZSAiQ3JlYXRpbmcgZGlyZWN0b3J5ICcke1BMQVRGT1JNX0VOVl9ESVJ9JyIKICAgIG1rZGlyIC12IC1wICIke1BMQVRGT1JNX0VOVl9ESVJ9IgpmaQoKIyByZWFkaW5nIHRoZSBhcnJheSBvZiBhcmd1bWVudHMgZ2l2ZW4gdG8gdGhpcyBzY3JpcHQgYXMga2V5LXZhbHVlIHBhaXJzLCBzcGxpdCBieSBlcXVhbCBzaWduLCBhbmQKIyB1c2luZyB0aGVzZSB0byBjcmVhdGUgZmlsZXMsIGZvbGxvd2luZyB0aGUgYnVpbGRwYWNrcyBjb252ZW50aW9uIHRoZSBrZXkgYmVjb21lcyB0aGUgZmlsZSBuYW1lIGFuZAojIHRoZSB2YWx1ZSBpdHMgY29udGVudHMKZm9yIGt2IGluICIke2FyZ3NbQF19IjsgZG8KICAgIElGUz0nPScgcmVhZCAtciBrZXkgdmFsdWUgPDw8IiR7a3Z9IgogICAgaWYgW1sgLW4gIiR7a2V5fSIgXV07IHRoZW4KICAgICAgICBmaWxlX3BhdGg9IiR7UExBVEZPUk1fRU5WX0RJUn0vJHtrZXl9IgogICAgICAgIHBoYXNlICJDcmVhdGluZyBlbnZpcm9ubWVudCBmaWxlICcke2ZpbGVfcGF0aH0nIgogICAgICAgIHByaW50ZiAiJXMiICIke3ZhbHVlfSIgPiIke2ZpbGVfcGF0aH0iCiAgICBmaQpkb25lCgojCiMgRXh0cmEgQmluZGluZ3MKIwoKIyBjb3B5aW5nIHRoZSBmaWxlcyBkZXNjcmliZWQgb24gdGhlIHBhcmFtYXRlciB0byB0aGUgc2VydmljZS1iaW5kaW5nIGRpcmVjdG9yeSwgdGhhdCBhbGxvd3MgdGhlIGNuYgojIHRvIGVtYmVkIHRoZSBjZXJ0aWZpY2F0ZSBidW5kbGVzIG9uIHRoZSBmaW5hbCBjb250YWluZXIgaW1hZ2UKaWYgW1sgIiR7V09SS1NQQUNFU19CSU5ESU5HU19CT1VORH0iID09ICJ0cnVlIiBdXTsgdGhlbgogICAgcGhhc2UgIlByZXBhcmluZyBidWlsZHBhY2tzIGJpbmRpbmdzICcke1NFUlZJQ0VfQklORElOR19ST09UfSciCgogICAgW1sgISAtZCAiJHtTRVJWSUNFX0JJTkRJTkdfUk9PVH0iIF1dICYmCiAgICAgICAgbWtkaXIgLXYgLXAgJHtTRVJWSUNFX0JJTkRJTkdfUk9PVH0KCiAgICBbWyAteiAiJHtQQVJBTVNfQklORElOR1NfR0xPQn0iIF1dICYmCiAgICAgICAgZmFpbCAiQklORElOR1NfR0xPQiBpcyBub3QgaW5mb3JtZWQgd2hpbGUgYmluZGluZ3MgV29ya3NwYWNlIGlzIG1vdW50ZWQhIgoKICAgIHBoYXNlICJTZWFyY2hpbmcgZm9yICcke1BBUkFNU19CSU5ESU5HU19HTE9CfScgb24gYmluZGlucyB3b3Jrc3BhY2UiCiAgICBmb3IgZiBpbiAkKGZpbmQgJHtXT1JLU1BBQ0VTX0JJTkRJTkdTX1BBVEh9IC1uYW1lICIke1BBUkFNU19CSU5ESU5HU19HTE9CfSIpOyBkbwogICAgICAgIHBoYXNlICJDb3B5aW5nIGJpbmRpbmcgJyR7Zn0nIHRvICcke1NFUlZJQ0VfQklORElOR19ST09UfSciCiAgICAgICAgY3AgLXYgJHtmfSAke1NFUlZJQ0VfQklORElOR19ST09UfQogICAgZG9uZQpmaQo=" |base64 -d >prepare.sh
+        chmod +x "prepare.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgSW5zcGVjdHMgdGhlIGAvbGF5ZXJzL3JlcG9ydC50b21sYCB0byBleHRyYWN0IGF0dHJpYnV0ZXMgYWJvdXQgdGhlIGltYWdlIGJ1aWx0IGJ5IHRoZSBDTkIsIGFuZCB1c2UKIyB0aGUgZGF0YSB0byB3cml0ZSB0aGUgZXhwZWN0ZWQgVGVrdG9uIHJlc3VsdCBmaWxlcy4KIwoKc2hvcHQgLXMgaW5oZXJpdF9lcnJleGl0CnNldCAtZXUgLW8gcGlwZWZhaWwKCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS9jb21tb24uc2giCgpwaGFzZSAiTWFraW5nIHN1cmUgcmVwb3J0IGZpbGUgZXhpc3RzICcke1JFUE9SVF9UT01MX1BBVEh9JyIKW1sgISAtZiAiJHtSRVBPUlRfVE9NTF9QQVRIfSIgXV0gJiYKCWZhaWwgIlJlcG9ydCBmaWxlIGlzIG5vdCBmb3VuZCBhdCAnUkVQT1JUX1RPTUxfUEFUSD0ke1JFUE9SVF9UT01MX1BBVEh9JyEiCgojCiMgRXh0cmFjdGluZyBJbWFnZSBEZXRhaWxzCiMKCnBoYXNlICJFeHRyYWN0aW5nIHJlc3VsdCBpbWFnZSBkaWdlc3QgYW5kIFVSTCIKCnJlYWRvbmx5IGRpZ2VzdD0iJChhd2sgLUYgJyInICcvZGlnZXN0LyB7IHByaW50ICQyIH0nICR7UkVQT1JUX1RPTUxfUEFUSH0pIgpyZWFkb25seSBpbWFnZV90YWc9IiQoYXdrIC1GICciJyAnL3RhZ3MvIHsgcHJpbnQgJDIgfScgJHtSRVBPUlRfVE9NTF9QQVRIfSkiCgpwaGFzZSAiV3JpdGluZyBpbWFnZSBkaWdlc3QgJyR7ZGlnZXN0fScgdG8gJyR7UkVTVUxUU19JTUFHRV9ESUdFU1RfUEFUSH0nIgpwcmludGYgIiVzIiAiJHtkaWdlc3R9IiA+JHtSRVNVTFRTX0lNQUdFX0RJR0VTVF9QQVRIfQoKcGhhc2UgIldyaXRpbmcgaW1hZ2UgVVJMICcke2ltYWdlX3RhZ30nIHRvICcke1JFU1VMVFNfSU1BR0VfVVJMX1BBVEh9JyIKcHJpbnRmICIlcyIgIiR7aW1hZ2VfdGFnfSIgPiR7UkVTVUxUU19JTUFHRV9VUkxfUEFUSH0K" |base64 -d >report.sh
+        chmod +x "report.sh"
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+
+    # prepare the filesytem and extra settings in order to perform the CNB builder as the next step,
+    # extra enviroment variables are stored on the "/platform/env", and extra binding files on the
+    # service-binding root directory, following buildpacks convention
+    - name: prepare
+      image: docker.io/library/bash:latest
+      command:
+        - /scripts/prepare.sh
+      args:
+        - "$(params.ENV_VARS[*])"
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: layers-dir
+          mountPath: /layers
+        - name: platform-dir
+          mountPath: /platform
+        - name: bindings-dir
+          mountPath: /bindings
+      securityContext:
+        runAsNonRoot: false
+
+    # runs the primary entrypoint for the task, invokes the "creator" CNB entrypoint to perform the
+    # whole lifecycle steps in order to build a new container image
+    - name: creator
+      image: $(params.BUILDER_IMAGE)
+      command:
+        - /scripts/creator.sh
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: layers-dir
+          mountPath: /layers
+        - name: platform-dir
+          mountPath: /platform
+        - name: bindings-dir
+          mountPath: /bindings
+      securityContext:
+        runAsNonRoot: true
+
+    # inspect and extract the lifecycle results stored on /layers/report.toml, looking for the digest
+    # and fully qualified image name
+    - name: report
+      image: docker.io/library/bash:latest
+      command:
+        - /scripts/report.sh
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: layers-dir
+          mountPath: /layers
