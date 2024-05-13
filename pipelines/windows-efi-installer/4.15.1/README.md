@@ -8,6 +8,11 @@ This example Pipeline is suitable only for Windows 11 or Server 2k22 (or other W
 The Pipeline implements this by modifying the supplied Windows ISO. It extracts all files from the ISO, replaces the prompt bootloader with the no-prompt bootloader and creates a new bootable ISO.
 This helps with automated installation of Windows in EFI boot mode. By default Windows in EFI boot mode uses a prompt bootloader, which will not continue with the boot process until a key is pressed. By replacing it with the no-prompt bootloader no key press is required to boot into the Windows installer. Then Task packs updated packages to new ISO, converts it with qemu-img and replaces original ISO file in PVC.
 
+> [!IMPORTANT]
+> If the ISO file does not contain files `efisys_noprompt.bin` and `cdboot_noprompt.efi` located at `efi/microsoft/boot/` 
+> inside ISO file, the `modify-windows-iso-file` task will exit and whole Pipeline will fail. In case your ISO file has 
+> different file structure, update `modify-windows-iso-file` task accordingly.
+
 After the ISO is modified it creates a new VirtualMachine which boots from the modified Windows installation image (ISO file). The installation of Windows is automatically executed and controlled by a Windows answer file. Then the Pipeline will wait for the installation to complete and will delete the created VirtualMachine while keeping the resulting DataVolume with the installed operating system. The Pipeline can be customized to support different installation requirements.
 
 ## Prerequisites
@@ -56,7 +61,10 @@ After the ISO is modified it creates a new VirtualMachine which boots from the m
 ## How to run
 
 Before you create PipelineRuns, you must create ConfigMaps with an autounattend.xml in the same namespace in which the VirtualMachine will be created.
-Examples of ConfigMaps can be found [here](https://github.com/kubevirt/kubevirt-tekton-tasks/tree/main/release/pipelines/windows-efi-installer/configmaps).
+Examples of ConfigMaps can be found [here](https://github.com/kubevirt/kubevirt-tekton-tasks/tree/main/release/pipelines/windows-efi-installer/configmaps). Before applying ConfigMap, uncomment the lines with `<AcceptEula>true<\/AcceptEula>`, or run this command:
+```
+sed -i "s/<!-- <AcceptEula>true<\/AcceptEula> -->/<AcceptEula>true<\/AcceptEula>/g" "configmaps/windows-efi-installer-configmaps.yaml"
+```
 
 Pipeline runs with resolvers:
 ```yaml
