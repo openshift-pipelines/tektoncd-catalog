@@ -1,0 +1,198 @@
+---
+# Source: task-containers/templates/task-s2i-java.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: s2i-java
+  labels:
+    app.kubernetes.io/version: 0.3.3
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-containers"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: containers
+    tekton.dev/pipelines.minVersion: 0.41.0
+    tekton.dev/tags: containers
+spec:
+  description: |
+    Builds the source code using the s2i's Java builder-image
+    "image-registry.openshift-image-registry.svc:5000/openshift/java".
+
+
+  workspaces:
+    - name: source
+      optional: false
+      description: |
+        Application source code, the build context for S2I workflow.
+    - name: dockerconfig
+      optional: true
+      description: >-
+          An optional workspace that allows providing a .docker/config.json file for Buildah to access the container registry.
+          The file should be placed at the root of the Workspace with name config.json.
+          
+  params:
+    - name: IMAGE
+      type: string
+      description: |
+        Fully qualified container image name to be built by s2i.
+    - name: VERSION
+      description: The tag of the imagestream for the corresponding language version
+      default: latest
+      type: string
+    - name: IMAGE_SCRIPTS_URL
+      type: string
+      default: image:///usr/libexec/s2i         
+      description: |
+        Specify a URL containing the default assemble and run scripts for the builder image
+    - name: ENV_VARS
+      type: array
+      default: []
+      description: |
+        Array containing string of Environment Variables as "KEY=VALUE"
+    - name: CONTEXT
+      type: string
+      default: "."
+      description: |
+        Path to the directory to use as context.
+    - name: STORAGE_DRIVER
+      type: string
+      default: vfs
+      description: |
+        Set buildah storage driver to reflect the currrent cluster node's
+        settings.
+    - name: FORMAT
+      description: The format of the built container, oci or docker
+      default: "oci"
+    - name: BUILD_EXTRA_ARGS
+      type: string
+      default: ""
+      description: |
+        Extra parameters passed for the build command when building images.
+    - name: PUSH_EXTRA_ARGS
+      type: string
+      default: ""
+      description: |
+        Extra parameters passed for the push command when pushing images.
+    - name: SKIP_PUSH
+      default: "false"
+      description: |
+        Skip pushing the image to the container registry.
+    - name: TLS_VERIFY
+      type: string
+      default: "true"
+      description: |
+        Sets the TLS verification flag, `true` is recommended.
+    - name: VERBOSE
+      type: string
+      default: "false"
+      description: |
+        Turns on verbose logging, all commands executed will be printed out.
+  
+  results:
+    - name: IMAGE_URL
+      description: |
+        Fully qualified image name.
+    - name: IMAGE_DIGEST
+      description: |
+        Digest of the image just built.
+  
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_IMAGE
+        value: "$(params.IMAGE)"
+      - name: PARAMS_VERSION
+        value: "$(params.VERSION)"
+      - name: PARAMS_IMAGE_SCRIPTS_URL
+        value: "$(params.IMAGE_SCRIPTS_URL)"
+      - name: PARAMS_CONTEXT
+        value: "$(params.CONTEXT)"
+      - name: PARAMS_FORMAT
+        value: "$(params.FORMAT)"
+      - name: PARAMS_STORAGE_DRIVER
+        value: "$(params.STORAGE_DRIVER)"
+      - name: PARAMS_BUILD_EXTRA_ARGS
+        value: "$(params.BUILD_EXTRA_ARGS)"
+      - name: PARAMS_PUSH_EXTRA_ARGS
+        value: "$(params.PUSH_EXTRA_ARGS)"
+      - name: PARAMS_SKIP_PUSH
+        value: "$(params.SKIP_PUSH)"
+      - name: PARAMS_TLS_VERIFY
+        value: "$(params.TLS_VERIFY)"
+      - name: PARAMS_VERBOSE
+        value: "$(params.VERBOSE)"
+      - name: WORKSPACES_SOURCE_BOUND
+        value: "$(workspaces.source.bound)"
+      - name: WORKSPACES_SOURCE_PATH
+        value: "$(workspaces.source.path)"
+      - name: WORKSPACES_DOCKERCONFIG_BOUND
+        value: "$(workspaces.dockerconfig.bound)"
+      - name: WORKSPACES_DOCKERCONFIG_PATH
+        value: "$(workspaces.dockerconfig.path)"
+      - name: RESULTS_IMAGE_URL_PATH
+        value: "$(results.IMAGE_URL.path)"
+      - name: RESULTS_IMAGE_DIGEST_PATH
+        value: "$(results.IMAGE_DIGEST.path)"
+  
+  steps:
+    - name: load-scripts
+      image: registry.access.redhat.com/ubi8-minimal:8.9
+      workingDir: /scripts
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgV3JhcHBlciBhcm91bmQgImJ1aWxkYWggYnVkIiB0byBidWlsZCBhbmQgcHVzaCBhIGNvbnRhaW5lciBpbWFnZSBiYXNlZCBvbiBhIERvY2tlcmZpbGUuCiMKCnNob3B0IC1zIGluaGVyaXRfZXJyZXhpdApzZXQgLWV1IC1vIHBpcGVmYWlsCgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvY29tbW9uLnNoIgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvYnVpbGRhaC1jb21tb24uc2giCgpmdW5jdGlvbiBfYnVpbGRhaCgpIHsKICAgIGJ1aWxkYWggXAogICAgICAgIC0tc3RvcmFnZS1kcml2ZXI9IiR7UEFSQU1TX1NUT1JBR0VfRFJJVkVSfSIgXAogICAgICAgIC0tdGxzLXZlcmlmeT0iJHtQQVJBTVNfVExTX1ZFUklGWX0iIFwKICAgICAgICAkeyp9Cn0KCiMKIyBQcmVwYXJlCiMKCiMgbWFraW5nIHN1cmUgdGhlIHJlcXVpcmVkIHdvcmtzcGFjZSAic291cmNlIiBpcyBib3VuZGVkLCB3aGljaCBtZWFucyBpdHMgdm9sdW1lIGlzIGN1cnJlbnRseSBtb3VudGVkCiMgYW5kIHJlYWR5IHRvIHVzZQpwaGFzZSAiSW5zcGVjdGluZyBzb3VyY2Ugd29ya3NwYWNlICcke1dPUktTUEFDRVNfU09VUkNFX1BBVEh9JyAoUFdEPScke1BXRH0nKSIKW1sgIiR7V09SS1NQQUNFU19TT1VSQ0VfQk9VTkR9IiAhPSAidHJ1ZSIgXV0gJiYKICAgIGZhaWwgIldvcmtzcGFjZSAnc291cmNlJyBpcyBub3QgYm91bmRlZCIKCnBoYXNlICJBc3NlcnRpbmcgdGhlIGRvY2tlcmZpbGUvY29udGFpbmVyZmlsZSAnJHtET0NLRVJGSUxFX0ZVTEx9JyBleGlzdHMiCltbICEgLWYgIiR7RE9DS0VSRklMRV9GVUxMfSIgXV0gJiYKICAgIGZhaWwgIkRvY2tlcmZpbGUgbm90IGZvdW5kIGF0OiAnJHtET0NLRVJGSUxFX0ZVTEx9JyIKCnBoYXNlICJJbnNwZWN0aW5nIGNvbnRleHQgJyR7UEFSQU1TX0NPTlRFWFR9JyIKW1sgISAtZCAiJHtQQVJBTVNfQ09OVEVYVH0iIF1dICYmCiAgICBmYWlsICJDT05URVhUIHBhcmFtIGlzIG5vdCBmb3VuZCBhdCAnJHtQQVJBTVNfQ09OVEVYVH0nLCBvbiBzb3VyY2Ugd29ya3NwYWNlIgoKIyBIYW5kbGUgb3B0aW9uYWwgZG9ja2VyY29uZmlnIHNlY3JldAppZiBbWyAiJHtXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19CT1VORH0iID09ICJ0cnVlIiBdXTsgdGhlbgoKICAgICMgaWYgY29uZmlnLmpzb24gZXhpc3RzIGF0IHdvcmtzcGFjZSByb290LCB3ZSB1c2UgdGhhdAogICAgaWYgdGVzdCAtZiAiJHtXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19QQVRIfS9jb25maWcuanNvbiI7IHRoZW4KICAgICAgICBleHBvcnQgRE9DS0VSX0NPTkZJRz0iJHtXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19QQVRIfSIKCiAgICAgICAgIyBlbHNlIHdlIGxvb2sgZm9yIC5kb2NrZXJjb25maWdqc29uIGF0IHRoZSByb290CiAgICBlbGlmIHRlc3QgLWYgIiR7V09SS1NQQUNFU19ET0NLRVJDT05GSUdfUEFUSH0vLmRvY2tlcmNvbmZpZ2pzb24iOyB0aGVuCiAgICAgICAgIyBlbnN1cmUgLmRvY2tlciBleGlzdCBiZWZvcmUgdGhlIGNvcHlpbmcgdGhlIGNvbnRlbnQKICAgICAgICBpZiBbICEgLWQgIiRIT01FLy5kb2NrZXIiIF07IHRoZW4KICAgICAgICAgICBta2RpciAtcCAiJEhPTUUvLmRvY2tlciIKICAgICAgICBmaQogICAgICAgIGNwICIke1dPUktTUEFDRVNfRE9DS0VSQ09ORklHX1BBVEh9Ly5kb2NrZXJjb25maWdqc29uIiAiJEhPTUUvLmRvY2tlci9jb25maWcuanNvbiIKICAgICAgICBleHBvcnQgRE9DS0VSX0NPTkZJRz0iJEhPTUUvLmRvY2tlciIKCiAgICAgICAgIyBuZWVkIHRvIGVycm9yIG91dCBpZiBuZWl0aGVyIGZpbGVzIGFyZSBwcmVzZW50CiAgICBlbHNlCiAgICAgICAgZWNobyAibmVpdGhlciAnY29uZmlnLmpzb24nIG5vciAnLmRvY2tlcmNvbmZpZ2pzb24nIGZvdW5kIGF0IHdvcmtzcGFjZSByb290IgogICAgICAgIGV4aXQgMQogICAgZmkKZmkKCkVOVElUTEVNRU5UX1ZPTFVNRT0iIgppZiBbWyAiJHtXT1JLU1BBQ0VTX1JIRUxfRU5USVRMRU1FTlRfQk9VTkR9IiA9PSAidHJ1ZSIgXV07IHRoZW4KICAgIEVOVElUTEVNRU5UX1ZPTFVNRT0iLS12b2x1bWUgJHtXT1JLU1BBQ0VTX1JIRUxfRU5USVRMRU1FTlRfUEFUSH06L2V0Yy9wa2kvZW50aXRsZW1lbnQiCmZpCgojCiMgQnVpbGQKIwoKcGhhc2UgIkJ1aWxkaW5nICcke1BBUkFNU19JTUFHRX0nIGJhc2VkIG9uICcke0RPQ0tFUkZJTEVfRlVMTH0nIgoKW1sgLW4gIiR7UEFSQU1TX0JVSUxEX0VYVFJBX0FSR1N9IiBdXSAmJgogICAgcGhhc2UgIkV4dHJhICdidWlsZGFoIGJ1ZCcgYXJndW1lbnRzIGluZm9ybWVkOiAnJHtQQVJBTVNfQlVJTERfRVhUUkFfQVJHU30nIgoKX2J1aWxkYWggYnVkICR7UEFSQU1TX0JVSUxEX0VYVFJBX0FSR1N9IFwKICAgICRFTlRJVExFTUVOVF9WT0xVTUUgXAogICAgLS1uby1jYWNoZSBcCiAgICAtLWZpbGU9IiR7RE9DS0VSRklMRV9GVUxMfSIgXAogICAgLS10YWc9IiR7UEFSQU1TX0lNQUdFfSIgXAogICAgJHtQQVJBTVNfQ09OVEVYVH0KCmlmIFtbICIke1BBUkFNU19TS0lQX1BVU0h9IiA9PSAidHJ1ZSIgXV07IHRoZW4KICAgIHBoYXNlICJTa2lwcGluZyBwdXNoaW5nICcke1BBUkFNU19JTUFHRX0nIHRvIHRoZSBjb250YWluZXIgcmVnaXN0cnkhIgogICAgZXhpdCAwCmZpCgojCiMgUHVzaAojCgpwaGFzZSAiUHVzaGluZyAnJHtQQVJBTVNfSU1BR0V9JyB0byB0aGUgY29udGFpbmVyIHJlZ2lzdHJ5IgoKW1sgLW4gIiR7UEFSQU1TX1BVU0hfRVhUUkFfQVJHU30iIF1dICYmCiAgICBwaGFzZSAiRXh0cmEgJ2J1aWxkYWggYnVkJyBhcmd1bWVudHMgaW5mb3JtZWQ6ICcke1BBUkFNU19QVVNIX0VYVFJBX0FSR1N9JyIKCiMgdGVtcG9yYXJ5IGZpbGUgdG8gc3RvcmUgdGhlIGltYWdlIGRpZ2VzdCwgaW5mb3JtYXRpb24gb25seSBvYnRhaW5lZCBhZnRlciBwdXNoaW5nIHRoZSBpbWFnZSB0byB0aGUKIyBjb250YWluZXIgcmVnaXN0cnkKZGVjbGFyZSAtciBkaWdlc3RfZmlsZT0iL3RtcC9idWlsZGFoLWRpZ2VzdC50eHQiCgpfYnVpbGRhaCBwdXNoICR7UEFSQU1TX1BVU0hfRVhUUkFfQVJHU30gXAogICAgLS1kaWdlc3RmaWxlPSIke2RpZ2VzdF9maWxlfSIgXAogICAgJHtQQVJBTVNfSU1BR0V9IFwKICAgIGRvY2tlcjovLyR7UEFSQU1TX0lNQUdFfQoKIwojIFJlc3VsdHMKIwoKcGhhc2UgIkluc3BlY3RpbmcgZGlnZXN0IHJlcG9ydCAoJyR7ZGlnZXN0X2ZpbGV9JykiCgpbWyAhIC1yICIke2RpZ2VzdF9maWxlfSIgXV0gJiYKICAgIGZhaWwgIlVuYWJsZSB0byBmaW5kIGRpZ2VzdC1maWxlIGF0ICcke2RpZ2VzdF9maWxlfSciCgpkZWNsYXJlIC1yIGRpZ2VzdF9zdW09IiQoY2F0ICR7ZGlnZXN0X2ZpbGV9KSIKCltbIC16ICIke2RpZ2VzdF9zdW19IiBdXSAmJgogICAgZmFpbCAiRGlnZXN0IGZpbGUgJyR7ZGlnZXN0X2ZpbGV9JyBpcyBlbXB0eSEiCgpwaGFzZSAiU3VjY2Vzc2Z1bHkgYnVpbHQgY29udGFpbmVyIGltYWdlICcke1BBUkFNU19JTUFHRX0nICgnJHtkaWdlc3Rfc3VtfScpIgplY2hvIC1uICIke1BBUkFNU19JTUFHRX0iIHwgdGVlICR7UkVTVUxUU19JTUFHRV9VUkxfUEFUSH0KZWNobyAtbiAiJHtkaWdlc3Rfc3VtfSIgfCB0ZWUgJHtSRVNVTFRTX0lNQUdFX0RJR0VTVF9QQVRIfQo=" |base64 -d >buildah-bud.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggUEFSQU1TX0lNQUdFPSIke1BBUkFNU19JTUFHRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0RPQ0tFUkZJTEU9IiR7UEFSQU1TX0RPQ0tFUkZJTEU6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19DT05URVhUPSIke1BBUkFNU19DT05URVhUOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfU1RPUkFHRV9EUklWRVI9IiR7UEFSQU1TX1NUT1JBR0VfRFJJVkVSOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfQlVJTERfRVhUUkFfQVJHUz0iJHtQQVJBTVNfQlVJTERfRVhUUkFfQVJHUzotfSIKZGVjbGFyZSAtcnggUEFSQU1TX1BVU0hfRVhUUkFfQVJHUz0iJHtQQVJBTVNfUFVTSF9FWFRSQV9BUkdTOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfU0tJUF9QVVNIPSIke1BBUkFNU19TS0lQX1BVU0g6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19UTFNfVkVSSUZZPSIke1BBUkFNU19UTFNfVkVSSUZZOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfVkVSQk9TRT0iJHtQQVJBTVNfVkVSQk9TRTotfSIKCmRlY2xhcmUgLXJ4IFdPUktTUEFDRVNfU09VUkNFX1BBVEg9IiR7V09SS1NQQUNFU19TT1VSQ0VfUEFUSDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19TT1VSQ0VfQk9VTkQ9IiR7V09SS1NQQUNFU19TT1VSQ0VfQk9VTkQ6LX0iCmRlY2xhcmUgLXJ4IFdPUktTUEFDRVNfRE9DS0VSQ09ORklHX1BBVEg9IiR7V09SS1NQQUNFU19ET0NLRVJDT05GSUdfUEFUSDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19ET0NLRVJDT05GSUdfQk9VTkQ9IiR7V09SS1NQQUNFU19ET0NLRVJDT05GSUdfQk9VTkQ6LX0iCmRlY2xhcmUgLXJ4IFdPUktTUEFDRVNfUkhFTF9FTlRJVExFTUVOVF9QQVRIPSIke1dPUktTUEFDRVNfUkhFTF9FTlRJVExFTUVOVF9QQVRIOi19IgpkZWNsYXJlIC1yeCBXT1JLU1BBQ0VTX1JIRUxfRU5USVRMRU1FTlRfQk9VTkQ9IiR7V09SS1NQQUNFU19SSEVMX0VOVElUTEVNRU5UX0JPVU5EOi19IgoKZGVjbGFyZSAtcnggUkVTVUxUU19JTUFHRV9ESUdFU1RfUEFUSD0iJHtSRVNVTFRTX0lNQUdFX0RJR0VTVF9QQVRIOi19IgpkZWNsYXJlIC1yeCBSRVNVTFRTX0lNQUdFX1VSTF9QQVRIPSIke1JFU1VMVFNfSU1BR0VfVVJMX1BBVEg6LX0iCgojCiMgRG9ja2VyZmlsZQojCgojIGV4cG9zaW5nIHRoZSBmdWxsIHBhdGggdG8gdGhlIGNvbnRhaW5lciBmaWxlLCB3aGljaCBieSBkZWZhdWx0IHNob3VsZCBiZSByZWxhdGl2ZSB0byB0aGUgcHJpbWFyeQojIHdvcmtzcGFjZSwgdG8gcmVjZWl2ZSBhIGRpZmZlcmVudCBjb250YWluZXItZmlsZSBsb2NhdGlvbgpkZWNsYXJlIC1yIGRvY2tlcmZpbGVfb25fd3M9IiR7V09SS1NQQUNFU19TT1VSQ0VfUEFUSH0vJHtQQVJBTVNfRE9DS0VSRklMRX0iCmRlY2xhcmUgLXggRE9DS0VSRklMRV9GVUxMPSIke0RPQ0tFUkZJTEVfRlVMTDotJHtkb2NrZXJmaWxlX29uX3dzfX0iCgojCiMgQXNzZXJ0aW5nIEVudmlyb25tZW50CiMKCltbIC16ICIke0RPQ0tFUkZJTEVfRlVMTH0iIF1dICYmCiAgICBmYWlsICJ1bmFibGUgdG8gZmluZCB0aGUgRG9ja2VyZmlsZSwgRE9DS0VSRklMRSBtYXkgaGF2ZSBhbiBpbmNvcnJlY3QgbG9jYXRpb24iCgpleHBvcnRlZF9vcl9mYWlsIFwKICAgIFdPUktTUEFDRVNfU09VUkNFX1BBVEggXAogICAgUEFSQU1TX0lNQUdFCgojCiMgVmVyYm9zZSBPdXRwdXQKIwoKaWYgW1sgIiR7UEFSQU1TX1ZFUkJPU0V9IiA9PSAidHJ1ZSIgXV07IHRoZW4KICAgIHNldCAteApmaQo=" |base64 -d >buildah-common.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0ZWt0b24ncyBob21lIGRpcmVjdG9yeQpkZWNsYXJlIC1yeCBURUtUT05fSE9NRT0iJHtURUtUT05fSE9NRTotL3Rla3Rvbi9ob21lfSIKCiMKIyBGdW5jdGlvbnMKIwoKZnVuY3Rpb24gZmFpbCgpIHsKICAgIGVjaG8gIkVSUk9SOiAkeyp9IiAyPiYxCiAgICBleGl0IDEKfQoKZnVuY3Rpb24gcGhhc2UoKSB7CiAgICBlY2hvICItLS0+IFBoYXNlOiAkeyp9Li4uIgp9CgojIGFzc2VydCBsb2NhbCB2YXJpYWJsZXMgYXJlIGV4cG9yZXRlZCBvbiB0aGUgZW52aXJvbm1lbnQKZnVuY3Rpb24gZXhwb3J0ZWRfb3JfZmFpbCgpIHsKICAgIGRlY2xhcmUgLWEgX3JlcXVpcmVkX3ZhcnM9IiR7QH0iCgogICAgZm9yIHYgaW4gJHtfcmVxdWlyZWRfdmFyc1tAXX07IGRvCiAgICAgICAgW1sgLXogIiR7IXZ9IiBdXSAmJgogICAgICAgICAgICBmYWlsICInJHt2fScgZW52aXJvbm1lbnQgdmFyaWFibGUgaXMgbm90IHNldCEiCiAgICBkb25lCgogICAgcmV0dXJuIDAKfQo=" |base64 -d >common.sh
+        chmod +x buildah-*.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0ZWt0b24ncyBob21lIGRpcmVjdG9yeQpkZWNsYXJlIC1yeCBURUtUT05fSE9NRT0iJHtURUtUT05fSE9NRTotL3Rla3Rvbi9ob21lfSIKCiMKIyBGdW5jdGlvbnMKIwoKZnVuY3Rpb24gZmFpbCgpIHsKICAgIGVjaG8gIkVSUk9SOiAkeyp9IiAyPiYxCiAgICBleGl0IDEKfQoKZnVuY3Rpb24gcGhhc2UoKSB7CiAgICBlY2hvICItLS0+IFBoYXNlOiAkeyp9Li4uIgp9CgojIGFzc2VydCBsb2NhbCB2YXJpYWJsZXMgYXJlIGV4cG9yZXRlZCBvbiB0aGUgZW52aXJvbm1lbnQKZnVuY3Rpb24gZXhwb3J0ZWRfb3JfZmFpbCgpIHsKICAgIGRlY2xhcmUgLWEgX3JlcXVpcmVkX3ZhcnM9IiR7QH0iCgogICAgZm9yIHYgaW4gJHtfcmVxdWlyZWRfdmFyc1tAXX07IGRvCiAgICAgICAgW1sgLXogIiR7IXZ9IiBdXSAmJgogICAgICAgICAgICBmYWlsICInJHt2fScgZW52aXJvbm1lbnQgdmFyaWFibGUgaXMgbm90IHNldCEiCiAgICBkb25lCgogICAgcmV0dXJuIDAKfQo=" |base64 -d >common.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgVXNlcyB0aGUgRG9ja2VyZmlsZSBnZW5lcmF0ZWQgYnkgczJpIHRvIGFzc2VtYmxlIGEgbmV3IGNvbnRhaW5lciBpbWFnZSB1c2luZyBidWlsZGFoLgojCgpzaG9wdCAtcyBpbmhlcml0X2VycmV4aXQKc2V0IC1ldSAtbyBwaXBlZmFpbAoKZGVjbGFyZSAtciBjdXJfZGlyPSIkKGRpcm5hbWUgJHtCQVNIX1NPVVJDRVswXX0pIgoKc291cmNlICIke2N1cl9kaXJ9L2NvbW1vbi5zaCIKc291cmNlICIke2N1cl9kaXJ9L3MyaS1jb21tb24uc2giCgojIGxvYWRpbmcgYnVpbGRhaCBzZXR0aW5ncyBvdmVyd3JpdHRpbmcgdGhlIGZ1bGwgcGF0aCB0byB0aGUgY29udGFpbmVyIGZpbGUKZGVjbGFyZSAteCBET0NLRVJGSUxFX0ZVTEw9IiR7UzJJX0RPQ0tFUkZJTEV9Igpzb3VyY2UgIiR7Y3VyX2Rpcn0vYnVpbGRhaC1jb21tb24uc2giCgpwaGFzZSAiQnVpbGRpbmcgdGhlIERvY2tlcmZpbGUgJyR7RE9DS0VSRklMRV9GVUxMfScgd2l0aCBidWlsZGFoIgpleGVjICR7Y3VyX2Rpcn0vYnVpbGRhaC1idWQuc2gK" |base64 -d >s2i-build.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0YXJnZXQgaW1hZ2UgbmFtZSAoZnVsbHkgcXVhbGlmaWVkKSB0byBiZSBidWlsZCB3aXRoIHMyaSwgcmVkZWNsYXJpbmcgdGhlIHNhbWUgcGFyYW1ldGVyIG5hbWUgdGhhbgojIGJ1aWxkYWggdGFzayB1c2VzCmRlY2xhcmUgLXggUEFSQU1TX0lNQUdFPSIke1BBUkFNU19JTUFHRTotfSIKIyBTcGVjaWZ5IGEgVVJMIGNvbnRhaW5pbmcgdGhlIGRlZmF1bHQgYXNzZW1ibGUgYW5kIHJ1biBzY3JpcHRzIGZvciB0aGUgYnVpbGRlciBpbWFnZQpkZWNsYXJlIC1yeCBQQVJBTVNfSU1BR0VfU0NSSVBUU19VUkw9IiR7UEFSQU1TX0lNQUdFX1NDUklQVFNfVVJMOi19IgoKIyB2b2x1bWUgbW91bnQgb3IgZGlyZWN0b3J5IHJlc3BvbnNpYmxlIGZvciBob2xkaW5nIGZpbGVzIAojIGxpa2UgZW52LCBEb2NrZXJmaWxlIGFuZCBhbnkgb3RoZXJzIG5lZWRlZCB0byBzdXBwb3J0IHMyaQpkZWNsYXJlIC1yeCBTMklfR0VORVJBVEVfRElSRUNUT1JZPSIke1MySV9HRU5FUkFURV9ESVJFQ1RPUlk6LS9zMmktZ2VuZXJhdGV9IgoKIyBmdWxsIHBhdGggdG8gdGhlIGNvbnRhaW5lciBmaWxlIGdlbmVyYXRlZCBieSBzMmkKZGVjbGFyZSAtcnggUzJJX0RPQ0tFUkZJTEU9IiR7UzJJX0RPQ0tFUkZJTEU6LSR7UzJJX0dFTkVSQVRFX0RJUkVDVE9SWX0vRG9ja2VyZmlsZS5nZW59IgoKIyBmdWxsIHBhdGggdG8gdGhlIGVudiBmaWxlIHVzZWQgd2l0aCB0aGUgLS1lbnZpcm9ubWVudC1maWxlIHBhcmFtZXRlciBvZiBzMmkKZGVjbGFyZSAtcnggUzJJX0VOVklST05NRU5UX0ZJTEU9IiR7UzJJX0VOVklST05NRU5UX0ZJTEU6LSR7UzJJX0dFTkVSQVRFX0RJUkVDVE9SWX0vZW52fSIKCiMKIyBBc3NlcnRpbmcgRW52aXJvbm1lbnQKIwoKZXhwb3J0ZWRfb3JfZmFpbCBcCiAgICBXT1JLU1BBQ0VTX1NPVVJDRV9QQVRIIFwKICAgIFBBUkFNU19JTUFHRQoKIwojIFZlcmJvc2UgT3V0cHV0CiMKCmRlY2xhcmUgLXggUzJJX0xPR0xFVkVMPSIwIgoKaWYgW1sgIiR7UEFSQU1TX1ZFUkJPU0V9IiA9PSAidHJ1ZSIgXV07IHRoZW4KICAgIFMySV9MT0dMRVZFTD0iMiIKICAgIHNldCAteApmaQo=" |base64 -d >s2i-common.sh
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgVXNlcyBzMmkgdG8gZ2VuZXJhdGUgdGhlIHJlcGVzY3RpdmUgQ29udGFpbmVyZmlsZSBiYXNlZCBvbiB0aGUgaW5mb21yZWQgYnVpbGRlci4gVGhlIENvbnRhaW5lcmZpbGUKIyBpcyBzdG9yZWQgb24gYSB0ZW1wb3JhcnkgbG9jYXRpb24uCiMKCnNob3B0IC1zIGluaGVyaXRfZXJyZXhpdApzZXQgLWV1IC1vIHBpcGVmYWlsCgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvY29tbW9uLnNoIgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvczJpLWNvbW1vbi5zaCIKCiMgczJpIGJ1aWxkZXIgaW1hZ2UgbmFtZSAoZnVsbHkgcXVhbGlmaWVkKQpkZWNsYXJlIC1yeCBTMklfQlVJTERFUl9JTUFHRT0iJHtTMklfQlVJTERFUl9JTUFHRTotfSIKCiMgdGFrZXMgdGhlIHZhbHVlcyBpbiBhcmd1bWVudCBFTlZfVkFSUyBhbmQgY3JlYXRlcyBhbiBhcnJheSB1c2luZyB0aG9zZSB2YWx1ZXMKZGVjbGFyZSAtcmEgRU5WX1ZBUlM9KCR7QH0pCgojIHJlLXVzaW5nIHRoZSBzYW1lIHBhcmFtZXRlcnMgdGhhbiBidWlsZGFoLCBzMmkgbmVlZHMgYnVpbGRhaCBhYmlsaXRpZXMgdG8gY3JlYXRlIHRoZSBmaW5hbAojIGNvbnRhaW5lciBpbWFnZSBiYXNlZCBvbiB3aGF0IHMyaSBnZW5lcmF0ZXMKc291cmNlICIkKGRpcm5hbWUgJHtCQVNIX1NPVVJDRVswXX0pL2J1aWxkYWgtY29tbW9uLnNoIgoKIwojIFByZXBhcmUKIwoKIyBtYWtpbmcgc3VyZSB0aGUgcmVxdWlyZWQgd29ya3NwYWNlICJzb3VyY2UiIGlzIGJvdW5kZWQsIHdoaWNoIG1lYW5zIGl0cyB2b2x1bWUgaXMgY3VycmVudGx5IG1vdW50ZWQKIyBhbmQgcmVhZHkgdG8gdXNlCnBoYXNlICJJbnNwZWN0aW5nIHNvdXJjZSB3b3Jrc3BhY2UgJyR7V09SS1NQQUNFU19TT1VSQ0VfUEFUSH0nIChQV0Q9JyR7UFdEfScpIgpbWyAiJHtXT1JLU1BBQ0VTX1NPVVJDRV9CT1VORH0iICE9ICJ0cnVlIiBdXSAmJgogICAgZmFpbCAiV29ya3NwYWNlICdzb3VyY2UnIGlzIG5vdCBib3VuZGVkIgoKcGhhc2UgIkluc3BlY3RpbmcgY29udGV4dCAnJHtQQVJBTVNfQ09OVEVYVH0nIgpbWyAhIC1kICIke1BBUkFNU19DT05URVhUfSIgXV0gJiYKICAgIGZhaWwgIkFwcGxpY2F0aW9uIHNvdXJjZSBjb2RlIGRpcmVjdG9yeSBub3QgZm91bmQgYXQgJyR7UEFSQU1TX0NPTlRFWFR9JyIKCnBoYXNlICJBZGRpbmcgdGhlIGVudmlyb25tZW50IHZhcmlhYmxlcyB0byAnJHtTMklfRU5WSVJPTk1FTlRfRklMRX0nIgoKIyBhZGQgdGhlIGVudmlyb25tZW50IHZhcmlhYmxlcyB0aGF0IGFyZSBzZW50IGFzIGNvbW1hbmQgbGluZSBhcmd1bWVudHMgZnJvbSBFTlZfVkFSUyBwYXJhbWV0ZXIKdG91Y2ggIiR7UzJJX0VOVklST05NRU5UX0ZJTEV9IgppZiBbICR7I0VOVl9WQVJTW0BdfSAtZ3QgMCBdOyB0aGVuCiAgICBmb3IgZW52X3ZhciBpbiAiJHtFTlZfVkFSU1tAXX0iOyBkbwogICAgICAgIGVjaG8gIiR7ZW52X3Zhcn0iID4+ICIke1MySV9FTlZJUk9OTUVOVF9GSUxFfSIKICAgIGRvbmUKZmkKCiMKIyBTMkkgR2VuZXJhdGUKIwoKcGhhc2UgIkdlbmVyYXRpbmcgdGhlIERvY2tlcmZpbGUgZm9yIFMySSBidWlsZGVyIGltYWdlICcke1MySV9CVUlMREVSX0lNQUdFfSciCnMyaSAtLWxvZ2xldmVsICIke1MySV9MT0dMRVZFTH0iIFwKICAgIGJ1aWxkICIke1BBUkFNU19DT05URVhUfSIgIiR7UzJJX0JVSUxERVJfSU1BR0V9IiBcCiAgICAgICAgLS1pbWFnZS1zY3JpcHRzLXVybCAiJHtQQVJBTVNfSU1BR0VfU0NSSVBUU19VUkx9IiBcCiAgICAgICAgLS1hcy1kb2NrZXJmaWxlICIke1MySV9ET0NLRVJGSUxFfSIgXAogICAgICAgIC0tZW52aXJvbm1lbnQtZmlsZSAiJHtTMklfRU5WSVJPTk1FTlRfRklMRX0iCgpwaGFzZSAiSW5zcGVjdGluZyB0aGUgRG9ja2VyZmlsZSBnZW5lcmF0ZWQgYXQgJyR7UzJJX0RPQ0tFUkZJTEV9JyIKW1sgISAtZiAiJHtTMklfRE9DS0VSRklMRX0iIF1dICYmCiAgICBmYWlsICJHZW5lcmF0ZWQgRG9ja2VyZmlsZSBpcyBub3QgZm91bmQhIgoKc2V0ICt4CnBoYXNlICJHZW5lcmF0ZWQgRG9ja2VyZmlsZSBwYXlsb2FkIgplY2hvIC1lbiAiPj4+ICR7UzJJX0RPQ0tFUkZJTEV9XG4kKGNhdCAke1MySV9ET0NLRVJGSUxFfSlcbjw8PCBFT0ZcbiIK" |base64 -d >s2i-generate.sh
+        chmod +x s2i-*.sh
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+  
+    - name: s2i-generate
+      image: registry.access.redhat.com/source-to-image/source-to-image-rhel8:v1.3.9-6
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: S2I_BUILDER_IMAGE
+          value: "image-registry.openshift-image-registry.svc:5000/openshift/java:$(params.VERSION)"
+      command:
+        - /scripts/s2i-generate.sh
+      args:
+        - "$(params.ENV_VARS[*])"
+      securityContext:
+        capabilities:
+          add: ["SETFCAP"]
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: s2i-generate-dir
+          mountPath: /s2i-generate
+  
+    - name: s2i-build
+      image: registry.access.redhat.com/ubi8/buildah:8.9
+      workingDir: /s2i-generate
+      command:
+        - /scripts/s2i-build.sh
+      securityContext:
+        capabilities:
+          add: ["SETFCAP"]
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: s2i-generate-dir
+          mountPath: /s2i-generate
+  
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
+    - name: s2i-generate-dir
+      emptyDir: {}
