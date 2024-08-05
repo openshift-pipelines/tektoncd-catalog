@@ -3,6 +3,7 @@ repositories:
   types:
   - tasks
   - pipelines
+  - stepactions
 - url: https://github.com/openshift-pipelines/task-maven
   types:
   - tasks
