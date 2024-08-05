@@ -90,7 +90,7 @@ jobs:
           # committer: ${{ env.GIT_COMMITTER_NAME }} ${{ env.GIT_COMMITTER_EMAIL }}
           # author: ${{ env.GIT_AUTHOR_NAME }} ${{ env.GIT_AUTHOR_EMAIL }}
           # body: ${{ steps.pr_body.outputs.content }} # TODO(vdemeester) Write git status from the artifact
-      - uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
+      - uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4
         with:
           name: ${{ matrix.name }}-${{ matrix.type }}-stable-catalog-artifact
           path: p/
