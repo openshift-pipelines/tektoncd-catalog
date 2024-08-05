@@ -42,9 +42,10 @@ jobs:
         run: |
           set -Eeu
 
-          mkdir -p stable/tasks stable/pipelines
+          mkdir -p stable/tasks stable/pipelines stable/stepactions
           cp -fRv tasks/* stable/tasks
           cp -fRv pipelines/* stable/pipelines
+          cp -fRv stepactions/* stable/stepactions
           catalog-cd catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
@@ -69,7 +70,7 @@ jobs:
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
             git status
-            git add tasks pipelines
+            git add tasks pipelines stepactions
             git commit -m "${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources\n\nURL: ${{ matrix.url }}\\nIgnoredVersions: ${{ matrix.ignoreVersions }}"
             git pull --rebase --autostash
           else

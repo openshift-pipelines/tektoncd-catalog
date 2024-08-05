@@ -40,7 +40,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -Eeu
-          mkdir -p experimental/tasks experimental/pipelines
+          mkdir -p experimental/tasks experimental/pipelines experimental/stepactions
           catalog-cd catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
@@ -57,6 +57,7 @@ jobs:
         run: |
           cp -fRv experimental/tasks/* p/experimental/tasks
           cp -fRv experimental/pipelines/* p/experimental/pipelines
+          cp -fRv experimental/stepactions/* p/experimental/stepactions
       - name: Add ${{ matrix.type }} from ${{ matrix.name }} to publish branch
         working-directory: p
         run: |
@@ -66,7 +67,7 @@ jobs:
           CHANGES=$(git status -s)
           if [[ -n "${CHANGES}" ]]; then
             git status
-            git add experimental/tasks experimental/pipelines
+            git add experimental/tasks experimental/pipelines experimental/stepactions
             git commit -m "experimental/${{ matrix.name }}: Auto-update tekton ${{ matrix.type }} resources\n\nURL: ${{ matrix.url }}\\nIgnoredVersions: ${{ matrix.ignoreVersions }}"
             git pull --rebase --autostash
           else
