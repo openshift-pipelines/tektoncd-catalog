@@ -1,0 +1,258 @@
+---
+# Source: task-git/templates/stepaction-git-clone.yaml
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: git-clone
+  labels:
+    app.kubernetes.io/version: 0.4.1
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-git"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: Git
+    tekton.dev/displayName: git
+    tekton.dev/pipelines.minVersion: 0.54.0
+    tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
+    tekton.dev/tags: git
+spec:
+
+
+  params:
+    - name: OUTPUT_PATH
+      description: |
+        A workspace that contains the fetched git repository, data will be placed on the root of the
+        Workspace, or on the relative path defined by the SUBDIRECTORY
+        parameter.
+    - name: SSH_DIRECTORY_PATH
+      description: |
+        A `.ssh` directory with private key, `known_hosts`, `config`, etc.
+        Copied to the Git user's home before cloning the repository, in order to
+        server as authentication mechanismBinding a Secret to this Workspace is
+        strongly recommended over other volume types.
+      default: "no-path"
+    - name: BASIC_AUTH_PATH
+      default: "no-path"
+      description: |
+        A Workspace containing a `.gitconfig` and `.git-credentials` files.
+        These will be copied to the user's home before Git commands run. All
+        other files in this Workspace are ignored. It is strongly recommended to
+        use `ssh-directory` over `basic-auth` whenever possible, and to bind a
+        Secret to this Workspace over other volume types.
+    - name: SSL_CA_DIRECTORY_PATH
+      default: "no-path"
+      description: |
+        A Workspace containing CA certificates, this will be used by Git to
+        verify the peer with when interacting with remote repositories using
+        HTTPS.
+    - name: CRT_FILENAME
+      type: string
+      default: ca-bundle.crt
+      description: |
+        Certificate Authority (CA) bundle filename on the `ssl-ca-directory`
+        Workspace.
+    - name: HTTP_PROXY
+      type: string
+      default: ""
+      description: |
+        HTTP proxy server (non-TLS requests).
+    - name: HTTPS_PROXY
+      type: string
+      default: ""
+      description: |
+        HTTPS proxy server (TLS requests).
+    - name: NO_PROXY
+      type: string
+      default: ""
+      description: |
+        Opt out of proxying HTTP/HTTPS requests.
+    - name: SUBDIRECTORY
+      type: string
+      default: ""
+      description: |
+        Relative path to the default Workspace where the git repository will be present.
+    - name: USER_HOME
+      type: string
+      default: "/home/git"
+      description: |
+        Absolute path to the Git user home directory.
+    - name: DELETE_EXISTING
+      type: string
+      default: "true"
+      description: |
+        Clean out the contents of the default Workspace before specific git operations occur, if data exists.
+    - name: VERBOSE
+      type: string
+      default: "false"
+      description: |
+        Log the commands executed.
+    - name: SSL_VERIFY
+      type: string
+      default: "true"
+      description: |
+        Sets the global `http.sslVerify` value, `false` is not advised unless
+        you trust the remote repository.
+    - name: URL
+      type: string
+      description: |
+        Git repository URL.
+    - name: REVISION
+      type: string
+      default: main
+      description: |
+        Revision to checkout, an branch, tag, sha, ref, etc...
+    - name: REFSPEC
+      default: ""
+      description: |
+        Repository `refspec` to fetch before checking out the revision.
+    - name: SUBMODULES
+      type: string
+      default: "true"
+      description: |
+        Initialize and fetch Git submodules.
+    - name: DEPTH
+      type: string
+      default: "1"
+      description: |
+        Number of commits to fetch, a "shallow clone" is a single commit.
+    - name: SPARSE_CHECKOUT_DIRECTORIES
+      type: string
+      default: ""
+      description: |
+        List of directory patterns split by comma to perform "sparse checkout".
+  
+  results:
+    - name: COMMIT
+      description: |
+        The precise commit SHA digest cloned.
+    - name: URL
+      description: |
+        The precise repository URL.
+    - name: COMMITTER_DATE
+      description: |
+        The epoch timestamp of the commit cloned.
+  
+  env:
+    
+    - name: PARAMS_URL
+      value: "$(params.URL)"
+    - name: PARAMS_REVISION
+      value: "$(params.REVISION)"
+    - name: PARAMS_REFSPEC
+      value: "$(params.REFSPEC)"
+    - name: PARAMS_SUBMODULES
+      value: "$(params.SUBMODULES)"
+    - name: PARAMS_DEPTH
+      value: "$(params.DEPTH)"
+    - name: PARAMS_SPARSE_CHECKOUT_DIRECTORIES
+      value: "$(params.SPARSE_CHECKOUT_DIRECTORIES)"
+    - name: PARAMS_OUTPUT_PATH
+      value: "$(params.OUTPUT_PATH)"
+    - name: PARAMS_SSH_DIRECTORY_PATH
+      value: "$(params.SSH_DIRECTORY_PATH)"
+    - name: PARAMS_BASIC_AUTH_PATH
+      value: "$(params.BASIC_AUTH_PATH)"
+    - name: PARAMS_SSL_CA_DIRECTORY_PATH
+      value: "$(params.SSL_CA_DIRECTORY_PATH)"
+    
+    - name: PARAMS_SSL_VERIFY
+      value: "$(params.SSL_VERIFY)"
+    - name: PARAMS_CRT_FILENAME
+      value: "$(params.CRT_FILENAME)"
+    - name: PARAMS_SUBDIRECTORY
+      value: "$(params.SUBDIRECTORY)"
+    - name: PARAMS_DELETE_EXISTING
+      value: "$(params.DELETE_EXISTING)"
+    - name: PARAMS_HTTP_PROXY
+      value: "$(params.HTTP_PROXY)"
+    - name: PARAMS_HTTPS_PROXY
+      value: "$(params.HTTPS_PROXY)"
+    - name: PARAMS_NO_PROXY
+      value: "$(params.NO_PROXY)"
+    - name: PARAMS_VERBOSE
+      value: "$(params.VERBOSE)"
+    - name: PARAMS_USER_HOME
+      value: "$(params.USER_HOME)"
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+  
+  image: registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:c4b2183f7c7997bd401d86b33eefb637b3ef2fa90618e875106292cd69a15c14
+  
+  script: |
+    #!/usr/bin/env sh
+    set -eu
+  
+    if [ "${PARAMS_VERBOSE}" = "true" ] ; then
+      set -x
+    fi
+  
+    if [ "${PARAMS_BASIC_AUTH_PATH}" != "no-path" ] ; then
+      cp "${PARAMS_BASIC_AUTH_PATH}/.git-credentials" "${PARAMS_USER_HOME}/.git-credentials"
+      cp "${PARAMS_BASIC_AUTH_PATH}/.gitconfig" "${PARAMS_USER_HOME}/.gitconfig"
+      chmod 400 "${PARAMS_USER_HOME}/.git-credentials"
+      chmod 400 "${PARAMS_USER_HOME}/.gitconfig"
+    fi
+  
+    if [ "${PARAMS_SSH_DIRECTORY_PATH}" != "no-path" ] ; then
+      cp -R "${PARAMS_SSH_DIRECTORY_PATH}" "${PARAMS_USER_HOME}"/.ssh
+      chmod 700 "${PARAMS_USER_HOME}"/.ssh
+      chmod -R 400 "${PARAMS_USER_HOME}"/.ssh/*
+    fi
+  
+    if [ "${PARAMS_SSL_CA_DIRECTORY_PATH}" != "no-path" ] ; then
+       export GIT_SSL_CAPATH="${PARAMS_SSL_CA_DIRECTORY_PATH}"
+       if [ "${PARAMS_CRT_FILENAME}" != "" ] ; then
+          export GIT_SSL_CAINFO="${PARAMS_SSL_CA_DIRECTORY_PATH}/${PARAMS_CRT_FILENAME}"
+       fi
+    fi
+    CHECKOUT_DIR="${PARAMS_OUTPUT_PATH}/${PARAMS_SUBDIRECTORY}"
+  
+    cleandir() {
+      # Delete any existing contents of the repo directory if it exists.
+      #
+      # We don't just "rm -rf ${CHECKOUT_DIR}" because ${CHECKOUT_DIR} might be "/"
+      # or the root of a mounted volume.
+      if [ -d "${CHECKOUT_DIR}" ] ; then
+        # Delete non-hidden files and directories
+        rm -rf "${CHECKOUT_DIR:?}"/*
+        # Delete files and directories starting with . but excluding ..
+        rm -rf "${CHECKOUT_DIR}"/.[!.]*
+        # Delete files and directories starting with .. plus any other character
+        rm -rf "${CHECKOUT_DIR}"/..?*
+      fi
+    }
+  
+    if [ "${PARAMS_DELETE_EXISTING}" = "true" ] ; then
+      cleandir || true
+    fi
+  
+    test -z "${PARAMS_HTTP_PROXY}" || export HTTP_PROXY="${PARAMS_HTTP_PROXY}"
+    test -z "${PARAMS_HTTPS_PROXY}" || export HTTPS_PROXY="${PARAMS_HTTPS_PROXY}"
+    test -z "${PARAMS_NO_PROXY}" || export NO_PROXY="${PARAMS_NO_PROXY}"
+  
+    git config --global --add safe.directory "${PARAMS_OUTPUT_PATH}"
+    /ko-app/git-init \
+      -url="${PARAMS_URL}" \
+      -revision="${PARAMS_REVISION}" \
+      -refspec="${PARAMS_REFSPEC}" \
+      -path="${CHECKOUT_DIR}" \
+      -sslVerify="${PARAMS_SSL_VERIFY}" \
+      -submodules="${PARAMS_SUBMODULES}" \
+      -depth="${PARAMS_DEPTH}" \
+      -sparseCheckoutDirectories="${PARAMS_SPARSE_CHECKOUT_DIRECTORIES}"
+    cd "${CHECKOUT_DIR}"
+    RESULT_SHA="$(git rev-parse HEAD)"
+    EXIT_CODE="$?"
+    if [ "${EXIT_CODE}" != 0 ] ; then
+      exit "${EXIT_CODE}"
+    fi
+    RESULT_COMMITTER_DATE="$(git log -1 --pretty=%ct)"
+    printf "%s" "${RESULT_COMMITTER_DATE}" > "$(step.results.COMMITTER_DATE.path)"
+    printf "%s" "${RESULT_SHA}" > "$(step.results.COMMIT.path)"
+    printf "%s" "${PARAMS_URL}" > "$(step.results.URL.path)"
