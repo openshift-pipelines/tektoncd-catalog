@@ -58,15 +58,8 @@ spec:
           value: /tekton/home
       script: |
         set -e
-        echo "/scripts/common.sh"
         printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0ZWt0b24ncyBob21lIGRpcmVjdG9yeQpkZWNsYXJlIC1yeCBURUtUT05fSE9NRT0iJHtURUtUT05fSE9NRTotL3Rla3Rvbi9ob21lfSIKCiMKIyBGdW5jdGlvbnMKIwoKZnVuY3Rpb24gZmFpbCgpIHsKICAgIGVjaG8gIkVSUk9SOiAkeyp9IiAyPiYxCiAgICBleGl0IDEKfQoKZnVuY3Rpb24gcGhhc2UoKSB7CiAgICBlY2hvICItLS0+IFBoYXNlOiAkeyp9Li4uIgp9CgojIGFzc2VydCBsb2NhbCB2YXJpYWJsZXMgYXJlIGV4cG9yZXRlZCBvbiB0aGUgZW52aXJvbm1lbnQKZnVuY3Rpb24gZXhwb3J0ZWRfb3JfZmFpbCgpIHsKICAgIGRlY2xhcmUgLWEgX3JlcXVpcmVkX3ZhcnM9IiR7QH0iCgogICAgZm9yIHYgaW4gJHtfcmVxdWlyZWRfdmFyc1tAXX07IGRvCiAgICAgICAgW1sgLXogIiR7IXZ9IiBdXSAmJgogICAgICAgICAgICBmYWlsICInJHt2fScgZW52aXJvbm1lbnQgdmFyaWFibGUgaXMgbm90IHNldCEiCiAgICBkb25lCgogICAgcmV0dXJuIDAKfQoK" |base64 -d >"/scripts/common.sh"
-        echo "/scripts/oc-client.sh"
-        echo "/scripts/oc-common.sh"
-        echo "/scripts/opc-client.sh"
-        echo "/scripts/opc-common.sh"
-        echo "/scripts/tkn-client.sh"
         printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKc2hvcHQgLXMgaW5oZXJpdF9lcnJleGl0CnNldCAtZXUgLW8gcGlwZWZhaWwKCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS9jb21tb24uc2giCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS90a24tY29tbW9uLnNoIgoKW1sgIiR7V09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9CT1VORH0iID09ICJ0cnVlIiBdXSAmJiBcCltbIC1mICR7V09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9QQVRIfS9rdWJlY29uZmlnIF1dICYmIFwKZXhwb3J0IEtVQkVDT05GSUc9JHtXT1JLU1BBQ0VTX0tVQkVDT05GSUdfRElSX1BBVEh9L2t1YmVjb25maWcKCmV2YWwgJHtQQVJBTVNfU0NSSVBUfQo=" |base64 -d >"/scripts/tkn-client.sh"
-        echo "/scripts/tkn-common.sh"
         printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggUEFSQU1TX1NDUklQVD0iJHtQQVJBTVNfU0NSSVBUOi19IgoKZGVjbGFyZSAtcnggV09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9QQVRIPSIke1dPUktTUEFDRVNfS1VCRUNPTkZJR19ESVJfUEFUSDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19LVUJFQ09ORklHX0RJUl9CT1VORD0iJHtXT1JLU1BBQ0VTX0tVQkVDT05GSUdfRElSX0JPVU5EOi19IgoKIwojIEFzc2VydGluZyBFbnZpcm9ubWVudAojCgpleHBvcnRlZF9vcl9mYWlsIFwKICAgIFdPUktTUEFDRVNfS1VCRUNPTkZJR19ESVJfQk9VTkQgXAogICAgUEFSQU1TX1NDUklQVCBcCiAgIAo=" |base64 -d >"/scripts/tkn-common.sh"
         ls /scripts/tkn-*.sh;
         chmod +x /scripts/tkn-*.sh;echo "Running Script /scripts/tkn-client.sh";
