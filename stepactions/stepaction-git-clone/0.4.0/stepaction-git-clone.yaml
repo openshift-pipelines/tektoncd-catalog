@@ -26,8 +26,8 @@ spec:
   params:
     - name: OUTPUT_PATH
       description: |
-        A workspace that contains the fetched git repository, data will be placed on the root of the
-        Workspace, or on the relative path defined by the SUBDIRECTORY
+        A directory that contains the fetched git repository. Cloned repo data is be placed in the root of the
+        directory or in the relative path defined by the SUBDIRECTORY
         parameter.
     - name: SSH_DIRECTORY_PATH
       description: |
@@ -39,23 +39,23 @@ spec:
     - name: BASIC_AUTH_PATH
       default: "no-path"
       description: |
-        A Workspace containing a `.gitconfig` and `.git-credentials` files.
-        These will be copied to the user's home before Git commands run. All
-        other files in this Workspace are ignored. It is strongly recommended to
+        A directory containing a `.gitconfig` and `.git-credentials` files.
+        These are copied to the user home directory before the Git commands run. All
+        other files in this directory are ignored. It is strongly recommended to
         use `ssh-directory` over `basic-auth` whenever possible, and to bind a
         Secret to this Workspace over other volume types.
     - name: SSL_CA_DIRECTORY_PATH
       default: "no-path"
       description: |
-        A Workspace containing CA certificates, this will be used by Git to
+        A directory containing CA certificates. Git uses these certificated to
         verify the peer with when interacting with remote repositories using
         HTTPS.
     - name: CRT_FILENAME
       type: string
       default: ca-bundle.crt
       description: |
-        Certificate Authority (CA) bundle filename on the `ssl-ca-directory`
-        Workspace.
+        Certificate Authority (CA) bundle filename in the `SSL_CA_DURECTORY_PATH`
+        directory.
     - name: HTTP_PROXY
       type: string
       default: ""
@@ -75,7 +75,7 @@ spec:
       type: string
       default: ""
       description: |
-        Relative path to the default Workspace where the git repository will be present.
+        Path to the default directory where the Git repository is to be placed, relative to `OUTPUT_PATH`.
     - name: USER_HOME
       type: string
       default: "/home/git"
@@ -85,12 +85,12 @@ spec:
       type: string
       default: "true"
       description: |
-        Clean out the contents of the default Workspace before specific git operations occur, if data exists.
+        Clean out the contents of the default Workspace before specific Git operations occur, if data exists.
     - name: VERBOSE
       type: string
       default: "false"
       description: |
-        Log the commands executed.
+        Log the executed commands.
     - name: SSL_VERIFY
       type: string
       default: "true"
@@ -105,11 +105,11 @@ spec:
       type: string
       default: main
       description: |
-        Revision to checkout, an branch, tag, sha, ref, etc...
+        Revision to check out, such as a branch, tag, sha, ref, etc...
     - name: REFSPEC
       default: ""
       description: |
-        Repository `refspec` to fetch before checking out the revision.
+        The repository `refspec` to fetch before checking out the revision.
     - name: SUBMODULES
       type: string
       default: "true"
@@ -125,7 +125,7 @@ spec:
       default: ""
       description: |
         List of directory patterns split by comma to perform "sparse checkout".
-  
+
   results:
     - name: COMMIT
       description: |
@@ -136,7 +136,7 @@ spec:
     - name: COMMITTER_DATE
       description: |
         The epoch timestamp of the commit cloned.
-  
+
   env:
     
     - name: PARAMS_URL
@@ -159,7 +159,7 @@ spec:
       value: "$(params.BASIC_AUTH_PATH)"
     - name: PARAMS_SSL_CA_DIRECTORY_PATH
       value: "$(params.SSL_CA_DIRECTORY_PATH)"
-    
+
     - name: PARAMS_SSL_VERIFY
       value: "$(params.SSL_VERIFY)"
     - name: PARAMS_CRT_FILENAME
@@ -181,30 +181,30 @@ spec:
   securityContext:
     runAsNonRoot: true
     runAsUser: 65532
-  
+
   image: registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:c4b2183f7c7997bd401d86b33eefb637b3ef2fa90618e875106292cd69a15c14
-  
+
   script: |
     #!/usr/bin/env sh
     set -eu
-  
+
     if [ "${PARAMS_VERBOSE}" = "true" ] ; then
       set -x
     fi
-  
+
     if [ "${PARAMS_BASIC_AUTH_PATH}" != "no-path" ] ; then
       cp "${PARAMS_BASIC_AUTH_PATH}/.git-credentials" "${PARAMS_USER_HOME}/.git-credentials"
       cp "${PARAMS_BASIC_AUTH_PATH}/.gitconfig" "${PARAMS_USER_HOME}/.gitconfig"
       chmod 400 "${PARAMS_USER_HOME}/.git-credentials"
       chmod 400 "${PARAMS_USER_HOME}/.gitconfig"
     fi
-  
+
     if [ "${PARAMS_SSH_DIRECTORY_PATH}" != "no-path" ] ; then
       cp -R "${PARAMS_SSH_DIRECTORY_PATH}" "${PARAMS_USER_HOME}"/.ssh
       chmod 700 "${PARAMS_USER_HOME}"/.ssh
       chmod -R 400 "${PARAMS_USER_HOME}"/.ssh/*
     fi
-  
+
     if [ "${PARAMS_SSL_CA_DIRECTORY_PATH}" != "no-path" ] ; then
        export GIT_SSL_CAPATH="${PARAMS_SSL_CA_DIRECTORY_PATH}"
        if [ "${PARAMS_CRT_FILENAME}" != "" ] ; then
@@ -212,7 +212,7 @@ spec:
        fi
     fi
     CHECKOUT_DIR="${PARAMS_OUTPUT_PATH}/${PARAMS_SUBDIRECTORY}"
-  
+
     cleandir() {
       # Delete any existing contents of the repo directory if it exists.
       #
@@ -227,15 +227,15 @@ spec:
         rm -rf "${CHECKOUT_DIR}"/..?*
       fi
     }
-  
+
     if [ "${PARAMS_DELETE_EXISTING}" = "true" ] ; then
       cleandir || true
     fi
-  
+
     test -z "${PARAMS_HTTP_PROXY}" || export HTTP_PROXY="${PARAMS_HTTP_PROXY}"
     test -z "${PARAMS_HTTPS_PROXY}" || export HTTPS_PROXY="${PARAMS_HTTPS_PROXY}"
     test -z "${PARAMS_NO_PROXY}" || export NO_PROXY="${PARAMS_NO_PROXY}"
-  
+
     git config --global --add safe.directory "${PARAMS_OUTPUT_PATH}"
     /ko-app/git-init \
       -url="${PARAMS_URL}" \
