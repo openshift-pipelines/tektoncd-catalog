@@ -26,9 +26,9 @@ spec:
   params:
     - name: OUTPUT_PATH
       description: |
-        A workspace that contains the fetched git repository, data will be placed on the root of the
-        Workspace, or on the relative path defined by the SUBDIRECTORY
-        parameter.
+        A directory that contains the fetched git repository. Cloned repo data is
+        placed in the root of the directory or in the relative path defined by the
+        `SUBDIRECTORY` parameter
     - name: SSH_DIRECTORY_PATH
       description: |
         A `.ssh` directory with private key, `known_hosts`, `config`, etc.
@@ -39,23 +39,22 @@ spec:
     - name: BASIC_AUTH_PATH
       default: "no-path"
       description: |
-        A Workspace containing a `.gitconfig` and `.git-credentials` files.
-        These will be copied to the user's home before Git commands run. All
-        other files in this Workspace are ignored. It is strongly recommended to
+        A directory containing `.gitconfig` and `.git-credentials` files.
+        These files are copied to the user home directory before Git commands run.
+        All other files in this Workspace are ignored. It is strongly recommended to
         use `ssh-directory` over `basic-auth` whenever possible, and to bind a
-        Secret to this Workspace over other volume types.
+        Secret to the Workspace providing this directory.
     - name: SSL_CA_DIRECTORY_PATH
       default: "no-path"
       description: |
-        A Workspace containing CA certificates, this will be used by Git to
+        A directory containing CA certificates. Git uses these certificates to
         verify the peer with when interacting with remote repositories using
         HTTPS.
     - name: CRT_FILENAME
       type: string
       default: ca-bundle.crt
       description: |
-        Certificate Authority (CA) bundle filename on the `ssl-ca-directory`
-        Workspace.
+        Certificate Authority (CA) bundle filename in the SSL CA directory.
     - name: HTTP_PROXY
       type: string
       default: ""
@@ -75,7 +74,8 @@ spec:
       type: string
       default: ""
       description: |
-        Relative path to the default Workspace where the git repository will be present.
+        Path to the directory for storing the cloned Git repository, relative to the
+        output directory.
     - name: USER_HOME
       type: string
       default: "/home/git"
@@ -85,12 +85,12 @@ spec:
       type: string
       default: "true"
       description: |
-        Clean out the contents of the default Workspace before specific git operations occur, if data exists.
+        Clean out the contents of the default Workspace before specific Git operations occur, if data exists.
     - name: VERBOSE
       type: string
       default: "false"
       description: |
-        Log the commands executed.
+        Log the executed commands.
     - name: SSL_VERIFY
       type: string
       default: "true"
