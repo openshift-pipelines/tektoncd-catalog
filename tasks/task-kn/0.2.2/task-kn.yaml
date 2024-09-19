@@ -1,0 +1,43 @@
+---
+# Source: task-openshift/templates/task-kn.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: kn
+  labels:
+    app.kubernetes.io/version: 0.2.2
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-openshift"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/displayName: CLI
+    tekton.dev/pipelines.minVersion: 0.17.0
+    tekton.dev/tags: cli
+spec:
+  description: >-
+    This Task performs operations on Knative resources
+    (services, revisions, routes) using kn CLI
+
+  params:
+    - name: ARGS
+      type: array
+      description: kn CLI arguments to run
+      default:
+        - "help"
+
+  steps:
+    - name: kn
+      env:
+        - name: HOME
+          value: /tekton/home
+      image: registry.redhat.io/openshift-serverless-1/client-kn-rhel8:1.11.2-4
+      command: ["/ko-app/kn"]
+      args: ["$(params.ARGS)"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
