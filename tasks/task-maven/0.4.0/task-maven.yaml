@@ -1,0 +1,128 @@
+---
+# Source: task-maven/templates/task-maven.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: maven
+  labels:
+    app.kubernetes.io/version: 0.4.0
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-maven"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: containers
+    tekton.dev/pipelines.minVersion: 0.41.0
+    tekton.dev/tags: containers
+spec:
+  description: >-
+    This Task can be used to run a Maven build.
+
+  workspaces:
+    - name: source
+      optional: false
+      description: The workspace consisting of maven project.
+    - name: server_secret
+      optional: true
+      description: The workspace containing server secrets (username and password)
+    - name: proxy_secret
+      optional: true
+      description: The workspace containing proxy server access credentials (username, password).
+    - name: proxy_configmap
+      optional: true
+      description: The workspace containing some proxy values (proxy_port,proxy_host,proxy_protocol,proxy_non_proxy_hosts)
+    - name: maven_settings
+      optional: true
+      description: The workspace consisting of the custom maven settings provided by the user.
+  params:
+    - name: GOALS
+      description: maven goals to run
+      type: array
+      default:
+        - "package"
+    - name: MAVEN_MIRROR_URL
+      description: The Maven repository mirror url
+      type: string
+      default: ""
+    - name: SUBDIRECTORY
+      type: string
+      description: >-
+        The subdirectory within the repository for sources on
+        which we want to execute maven goals.
+      default: "."
+
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_MAVEN_MIRROR_URL
+        value: "$(params.MAVEN_MIRROR_URL)"
+      - name: PARAMS_SUBDIRECTORY
+        value: "$(params.SUBDIRECTORY)"
+      - name: WORKSPACES_SOURCE_PATH
+        value: "$(workspaces.source.path)"
+      - name: WORKSPACES_SOURCE_BOUND
+        value: "$(workspaces.source.bound)"
+      - name: WORKSPACES_SERVER_SECRET_PATH
+        value: "$(workspaces.server_secret.path)"
+      - name: WORKSPACES_SERVER_SECRET_BOUND
+        value: "$(workspaces.server_secret.bound)"
+      - name: WORKSPACES_PROXY_SECRET_PATH
+        value: "$(workspaces.proxy_secret.path)"
+      - name: WORKSPACES_PROXY_SECRET_BOUND
+        value: "$(workspaces.proxy_secret.bound)"
+      - name: WORKSPACES_PROXY_CONFIGMAP_PATH
+        value: "$(workspaces.proxy_configmap.path)"
+      - name: WORKSPACES_PROXY_CONFIGMAP_BOUND
+        value: "$(workspaces.proxy_configmap.bound)"
+      - name: WORKSPACES_MAVEN_SETTINGS_PATH
+        value: "$(workspaces.maven_settings.path)"
+      - name: WORKSPACES_MAVEN_SETTINGS_BOUND
+        value: "$(workspaces.maven_settings.bound)"
+
+  steps:
+    - name: maven-generate
+      image: registry.access.redhat.com/ubi8/ubi-minimal:8.9
+      env:
+        - name: HOME
+          value: /tekton/home
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggTUFWRU5fR0VORVJBVEVfRElSRUNUT1JZPSIke1dPUktTUEFDRVNfU09VUkNFX1BBVEh9LyR7UEFSQU1TX1NVQkRJUkVDVE9SWX0vbWF2ZW4tZ2VuZXJhdGUiCgpkZWNsYXJlIC1yeCBNQVZFTl9TRVRUSU5HU19GSUxFPSIke01BVkVOX0dFTkVSQVRFX0RJUkVDVE9SWX0vc2V0dGluZ3MueG1sIgoKaWYgW1sgLWYgJHtNQVZFTl9TRVRUSU5HU19GSUxFfSBdXTsgdGhlbgogICAgZWNobyAidXNpbmcgZXhpc3RpbmcgJyR7TUFWRU5fU0VUVElOR1NfRklMRX0nIgogICAgY2F0ICR7TUFWRU5fU0VUVElOR1NfRklMRX0KICAgIGV4aXQgMApmaQoKbWtkaXIgIiR7TUFWRU5fR0VORVJBVEVfRElSRUNUT1JZfSIKCiMgQ2hlY2sgaWYgc2V0dGluZ3MueG1sIGV4aXN0cyBpbiB0aGUgd29ya3NwYWNlIG1hdmVuLXNldHRpbmdzCmlmIFtbIC1mICIke1dPUktTUEFDRVNfTUFWRU5fU0VUVElOR1NfUEFUSH0vc2V0dGluZ3MueG1sIiBdXTsgdGhlbgogICAgY3AgIiR7V09SS1NQQUNFU19NQVZFTl9TRVRUSU5HU19QQVRIfS9zZXR0aW5ncy54bWwiICIke01BVkVOX1NFVFRJTkdTX0ZJTEV9IgogICAgZWNobyAiVXNpbmcgJyR7TUFWRU5fU0VUVElOR1NfRklMRX0nIGNvcGllZCBmcm9tIG9wdGlvbmFsIHdvcmtzcGFjZSBtYXZlbi1zZXR0aW5ncyIKICAgIGNhdCAke01BVkVOX1NFVFRJTkdTX0ZJTEV9CiAgICBleGl0IDAKZmkKCmNhdCA+ICIke01BVkVOX1NFVFRJTkdTX0ZJTEV9IiA8PEVPRgo8c2V0dGluZ3M+CiAgICA8c2VydmVycz4KICAgIDwhLS0gVGhlIHNlcnZlcnMgYWRkZWQgaGVyZSBhcmUgZ2VuZXJhdGVkIGZyb20gZW52aXJvbm1lbnQgdmFyaWFibGVzLiBEb24ndCBjaGFuZ2UuIC0tPgogICAgPCEtLSAjIyMgU0VSVkVSJ3MgVVNFUiBJTkZPIGZyb20gRU5WICMjIyAtLT4KICAgIDwvc2VydmVycz4KICAgIDxtaXJyb3JzPgogICAgPCEtLSBUaGUgbWlycm9ycyBhZGRlZCBoZXJlIGFyZSBnZW5lcmF0ZWQgZnJvbSBlbnZpcm9ubWVudCB2YXJpYWJsZXMuIERvbid0IGNoYW5nZS4gLS0+CiAgICA8IS0tICMjIyBtaXJyb3JzIGZyb20gRU5WICMjIyAtLT4KICAgIDwvbWlycm9ycz4KICAgIDxwcm94aWVzPgogICAgPCEtLSBUaGUgcHJveGllcyBhZGRlZCBoZXJlIGFyZSBnZW5lcmF0ZWQgZnJvbSBlbnZpcm9ubWVudCB2YXJpYWJsZXMuIERvbid0IGNoYW5nZS4gLS0+CiAgICA8IS0tICMjIyBIVFRQIHByb3h5IGZyb20gRU5WICMjIyAtLT4KICAgIDwvcHJveGllcz4KPC9zZXR0aW5ncz4KRU9GCgpjYXQgIiR7TUFWRU5fU0VUVElOR1NfRklMRX0iCgp4bWw9IiIKaWYgW1sgIiR7V09SS1NQQUNFU19QUk9YWV9TRUNSRVRfQk9VTkR9IiA9PSAidHJ1ZSIgXV07IHRoZW4KICAgIGlmIHRlc3QgLWYgJHtXT1JLU1BBQ0VTX1BST1hZX1NFQ1JFVF9QQVRIfS91c2VybmFtZSAmJiB0ZXN0IC1mICR7V09SS1NQQUNFU19QUk9YWV9TRUNSRVRfUEFUSH0vcGFzc3dvcmQ7IHRoZW4KICAgIFBBUkFNU19QUk9YWV9VU0VSPSQoY2F0ICR7V09SS1NQQUNFU19QUk9YWV9TRUNSRVRfUEFUSH0vdXNlcm5hbWUpCiAgICBQQVJBTVNfUFJPWFlfUEFTU1dPUkQ9JChjYXQgJHtXT1JLU1BBQ0VTX1BST1hZX1NFQ1JFVF9QQVRIfS9wYXNzd29yZCkKCiAgICAjIEZldGNoaW5nIHByb3h5IGNvbmZpZ3VyYXRpb24gdmFsdWVzIGZyb20gQ29uZmlnTWFwIHdvcmtzcGFjZQogICAgUEFSQU1TX1BST1hZX0hPU1Q9JChjYXQgJHtXT1JLU1BBQ0VTX1BST1hZX0NPTkZJR01BUF9QQVRIfS9wcm94eV9ob3N0KQogICAgUEFSQU1TX1BST1hZX1BPUlQ9JChjYXQgJHtXT1JLU1BBQ0VTX1BST1hZX0NPTkZJR01BUF9QQVRIfS9wcm94eV9wb3J0KQogICAgUEFSQU1TX1BST1hZX1BST1RPQ09MPSQoY2F0ICR7V09SS1NQQUNFU19QUk9YWV9DT05GSUdNQVBfUEFUSH0vcHJveHlfcHJvdG9jb2wpCiAgICBQQVJBTVNfUFJPWFlfTk9OX1BST1hZX0hPU1RTPSQoY2F0ICR7V09SS1NQQUNFU19QUk9YWV9DT05GSUdNQVBfUEFUSH0vcHJveHlfbm9uX3Byb3h5X2hvc3RzKQoKICAgIGlmIFsgLW4gIiR7UEFSQU1TX1BST1hZX0hPU1R9IiAtYSAtbiAiJHtQQVJBTVNfUFJPWFlfUE9SVH0iIF07IHRoZW4KICAgICAgICB4bWw9Ijxwcm94eT5cCiAgICAgICAgPGlkPmdlbnByb3h5PC9pZD5cCiAgICAgICAgPGFjdGl2ZT50cnVlPC9hY3RpdmU+XAogICAgICAgIDxwcm90b2NvbD4ke1BBUkFNU19QUk9YWV9QUk9UT0NPTH08L3Byb3RvY29sPlwKICAgICAgICA8aG9zdD4ke1BBUkFNU19QUk9YWV9IT1NUfTwvaG9zdD5cCiAgICAgICAgPHBvcnQ+JHtQQVJBTVNfUFJPWFlfUE9SVH08L3BvcnQ+IgogICAgICAgIGlmIFsgLW4gIiR7UEFSQU1TX1BST1hZX1VTRVJ9IiAtYSAtbiAiJHtQQVJBTVNfUFJPWFlfUEFTU1dPUkR9IiBdOyB0aGVuCiAgICAgICAgICAgIHhtbD0iJHhtbFwKICAgICAgICAgICAgPHVzZXJuYW1lPiR7UEFSQU1TX1BST1hZX1VTRVJ9PC91c2VybmFtZT5cCiAgICAgICAgICAgIDxwYXNzd29yZD4ke1BBUkFNU19QUk9YWV9QQVNTV09SRH08L3Bhc3N3b3JkPiIKICAgICAgICBmaQogICAgICAgIGlmIFsgLW4gIiR7UEFSQU1TX1BST1hZX05PTl9QUk9YWV9IT1NUU30iIF07IHRoZW4KICAgICAgICAgICAgeG1sPSIkeG1sXAogICAgICAgICAgICA8bm9uUHJveHlIb3N0cz4ke1BBUkFNU19QUk9YWV9OT05fUFJPWFlfSE9TVFN9PC9ub25Qcm94eUhvc3RzPiIKICAgICAgICBmaQogICAgICAgIHhtbD0iJHhtbFwKICAgICAgICA8L3Byb3h5PiIKICAgICAgICBzZWQgLWkgInN8PCEtLSAjIyMgSFRUUCBwcm94eSBmcm9tIEVOViAjIyMgLS0+fCR4bWx8IiAke01BVkVOX1NFVFRJTkdTX0ZJTEV9CiAgICBmaQogICAgZWxzZQogICAgICAgIGVjaG8gIm5vICd1c2VybmFtZScgb3IgJ3Bhc3N3b3JkJyBmaWxlIGZvdW5kIGF0IHdvcmtzcGFjZSBwcm94eV9zZWNyZXQiCiAgICAgICAgZXhpdCAxCiAgICBmaQpmaQoKaWYgW1sgIiR7V09SS1NQQUNFU19TRVJWRVJfU0VDUkVUX0JPVU5EfSIgPT0gInRydWUiIF1dOyB0aGVuCiAgICBpZiB0ZXN0IC1mICR7V09SS1NQQUNFU19TRVJWRVJfU0VDUkVUX1BBVEh9L3VzZXJuYW1lICYmIHRlc3QgLWYke1dPUktTUEFDRVNfU0VSVkVSX1NFQ1JFVF9QQVRIfS9wYXNzd29yZDsgdGhlbgoJU0VSVkVSX1VTRVI9JChjYXQgJHtXT1JLU1BBQ0VTX1NFUlZFUl9TRUNSRVRfUEFUSH0vdXNlcm5hbWUpCglTRVJWRVJfUEFTU1dPUkQ9JChjYXQgJHtXT1JLU1BBQ0VTX1NFUlZFUl9TRUNSRVRfUEFUSH0vcGFzc3dvcmQpCglpZiBbIC1uICIke1NFUlZFUl9VU0VSfSIgLWEgLW4gIiR7U0VSVkVSX1BBU1NXT1JEfSIgXTsgdGhlbgoJICAgIHhtbD0iPHNlcnZlcj5cCiAgICAgICAgPGlkPnNlcnZlcmlkPC9pZD4iCgkgICAgeG1sPSIkeG1sXAogICAgICAgIDx1c2VybmFtZT4ke1NFUlZFUl9VU0VSfTwvdXNlcm5hbWU+XAogICAgICAgIDxwYXNzd29yZD4ke1NFUlZFUl9QQVNTV09SRH08L3Bhc3N3b3JkPiIKCSAgICB4bWw9IiR4bWxcCiAgICAgICAgPC9zZXJ2ZXI+IgoJICAgIHNlZCAtaSAic3w8IS0tICMjIyBTRVJWRVIncyBVU0VSIElORk8gZnJvbSBFTlYgIyMjIC0tPnwkeG1sfCIgJHtNQVZFTl9TRVRUSU5HU19GSUxFfQoJICAgIGVjaG8gIlNFUlZFUiBDcmVkcyBVcGRhdGVkIgoJZmkKICAgIGVsc2UKCWVjaG8gIm5vICd1c2VyJyBvciAncGFzc3dvcmQnIGZpbGUgZm91bmQgYXQgd29ya3NwYWNlIHNlcnZlcl9zZWNyZXQiCiAgICAgICAgZXhpdCAxCiAgICBmaQpmaQoKaWYgWyAtbiAiJHtQQVJBTVNfTUFWRU5fTUlSUk9SX1VSTH0iIF07IHRoZW4KICAgIHhtbD0iICAgIDxtaXJyb3I+XAogICAgPGlkPm1pcnJvci5kZWZhdWx0PC9pZD5cCiAgICA8dXJsPiR7UEFSQU1TX01BVkVOX01JUlJPUl9VUkx9PC91cmw+XAogICAgPG1pcnJvck9mPmNlbnRyYWw8L21pcnJvck9mPlwKICAgIDwvbWlycm9yPiIKICAgIHNlZCAtaSAic3w8IS0tICMjIyBtaXJyb3JzIGZyb20gRU5WICMjIyAtLT58JHhtbHwiICR7TUFWRU5fU0VUVElOR1NfRklMRX0KZmkK" |base64 -d >"/scripts/maven-generate.sh"
+        chmod +x /scripts/maven-*.sh;echo "Running Script /scripts/maven-generate.sh";
+          /scripts/maven-generate.sh;
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: maven-settings-dir
+          mountPath: /maven-generate
+
+    - name: maven-goals
+      env:
+        - name: HOME
+          value: /tekton/home
+      image: registry.access.redhat.com/ubi8/openjdk-11:latest
+      workingDir: $(workspaces.source.path)/$(params.SUBDIRECTORY)
+      command: ["/usr/bin/mvn"]
+      args:
+        - -s
+        - maven-generate/settings.xml
+        - "$(params.GOALS[*])"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      volumeMounts:
+        - name: maven-settings-dir
+          mountPath: /maven-generate
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
+    - name: maven-settings-dir
+      emptyDir: {}
