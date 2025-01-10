@@ -44,7 +44,7 @@ spec:
         -   name: name
             value: modify-data-object
         -   name: version
-            value: v4.16.5
+            value: v0.23.0
         resolver: hub
 ```
 
