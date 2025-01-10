@@ -7,17 +7,17 @@ metadata:
     tekton.dev/pipelines.minVersion: "0.43.0"
     tekton.dev/categories: Automation
     tekton.dev/tags: kubevirt
-    tekton.dev/displayName: "OpenShift Virtualization modify Windows iso"
+    tekton.dev/displayName: "KubeVirt modify Windows iso"
     tekton.dev/platforms: "linux/amd64"
     artifacthub.io/maintainers: |
       - name: KubeVirt Tekton tasks maintainers
         email: kubevirt-tekton-tasks@redhat.com
-    artifacthub.io/provider: Red Hat
+    artifacthub.io/provider: KubeVirt
     artifacthub.io/recommendations: |
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.16.4
+    app.kubernetes.io/version: v0.23.0
   name: modify-windows-iso-file
 spec:
   description: >-
@@ -40,7 +40,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9:v4.16.4"
+      image: "quay.io/kubevirt/tekton-tasks-disk-virt:v0.23.0"
       script: |
         #!/bin/bash
         set -x
@@ -88,7 +88,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:v4.16.4"
+      image: "quay.io/kubevirt/tekton-tasks:v0.23.0"
       script: |
         #!/bin/bash
         set -ex
@@ -115,7 +115,7 @@ spec:
         capabilities:
           drop:
           - "ALL"
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9:v4.16.4"
+      image: "quay.io/kubevirt/tekton-tasks-disk-virt:v0.23.0"
       script: |
         #!/bin/bash
         set -x
