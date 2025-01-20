@@ -7,17 +7,17 @@ metadata:
     tekton.dev/pipelines.minVersion: "0.43.0"
     tekton.dev/categories: Automation
     tekton.dev/tags: kubevirt
-    tekton.dev/displayName: "KubeVirt modify data object"
+    tekton.dev/displayName: "OpenShift Virtualization modify data object"
     tekton.dev/platforms: "linux/amd64"
     artifacthub.io/maintainers: |
       - name: KubeVirt Tekton tasks maintainers
         email: kubevirt-tekton-tasks@redhat.com
-    artifacthub.io/provider: KubeVirt
+    artifacthub.io/provider: Red Hat
     artifacthub.io/recommendations: |
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v0.23.0
+    app.kubernetes.io/version: v4.16.4
   name: modify-data-object
 spec:
   description: >-
@@ -51,10 +51,6 @@ spec:
       description: Name of the data object to delete. This parameter is used only for Delete operation.
       default: ""
       type: string
-    - description: When waitForSuccess parameter is set to true, this parameter defines how long the task will wait until it timeouts. Should be in a 3h2m1s format.
-      name: timeout
-      type: string
-      default: "1h"
     - name: setOwnerReference
       description: Set owner reference to the new object created by the task run pod. Allowed values true/false
       type: string
@@ -66,7 +62,7 @@ spec:
       description: The namespace of the data object that was created.
   steps:
     - name: modify-data-object
-      image: "quay.io/kubevirt/tekton-tasks:v0.23.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9:v4.16.4"
       command:
         - modify-data-object
       args:
@@ -88,8 +84,6 @@ spec:
           value: $(params.deleteObjectName)
         - name: SET_OWNER_REFERENCE
           value: $(params.setOwnerReference)
-        - name: TIMEOUT
-          value: $(params.timeout)
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
