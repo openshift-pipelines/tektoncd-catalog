@@ -43,9 +43,9 @@ jobs:
           set -Eeu
 
           mkdir -p stable/tasks stable/pipelines stable/stepactions
-          cp -fRv tasks/* stable/tasks
-          cp -fRv pipelines/* stable/pipelines
-          cp -fRv stepactions/* stable/stepactions
+          cp -fRv tasks/* stable/tasks || true
+          cp -fRv pipelines/* stable/pipelines || true
+          cp -fRv stepactions/* stable/stepactions || true
           catalog-cd catalog generate-from \
                  --name ${{ matrix.name }} \
                  --url ${{ matrix.url }} \
