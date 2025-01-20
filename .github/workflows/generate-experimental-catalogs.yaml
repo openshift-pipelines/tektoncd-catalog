@@ -55,9 +55,9 @@ jobs:
           path: p
       - name: Copy "partial" catalog ${{ matrix.name }} in publish branch
         run: |
-          cp -fRv experimental/tasks/* p/experimental/tasks
-          cp -fRv experimental/pipelines/* p/experimental/pipelines
-          cp -fRv experimental/stepactions/* p/experimental/stepactions
+          cp -fRv experimental/tasks/* p/experimental/tasks || true
+          cp -fRv experimental/pipelines/* p/experimental/pipelines || true
+          cp -fRv experimental/stepactions/* p/experimental/stepactions || true
       - name: Add ${{ matrix.type }} from ${{ matrix.name }} to publish branch
         working-directory: p
         run: |
