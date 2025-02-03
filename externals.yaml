@@ -25,3 +25,6 @@ repositories:
   types:
   - tasks
   - pipelines
+- url: https://github.com/openshift-pipelines/tekton-caches
+  types:
+  - stepactions
