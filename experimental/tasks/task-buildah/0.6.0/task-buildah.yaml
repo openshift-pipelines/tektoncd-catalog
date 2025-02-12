@@ -1,0 +1,172 @@
+---
+# Source: task-containers/templates/task-buildah.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildah
+  labels:
+    app.kubernetes.io/version: 0.6.0
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-containers"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: containers
+    tekton.dev/pipelines.minVersion: 0.41.0
+    tekton.dev/tags: containers
+spec:
+  description: |
+    Buildah task builds source into a container image and
+    then pushes it to a container registry.
+
+  workspaces:
+    - name: source
+      optional: false
+      description: |
+        Container build context, like for instnace a application source code
+        followed by a `Dockerfile`.
+    - name: dockerconfig
+      description: >-
+        An optional workspace that allows providing a .docker/config.json file
+        for Buildah to access the container registry.
+        The file should be placed at the root of the Workspace with name config.json
+        or .dockerconfigjson.
+      optional: true
+    - name: rhel-entitlement
+      description: >-
+        An optional workspace that allows providing the entitlement keys
+        for Buildah to access subscription. The mounted workspace contains
+        entitlement.pem and entitlement-key.pem.
+      optional: true
+      mountPath: /tmp/entitlement
+  params:
+    - name: IMAGE
+      type: string
+      description: |
+        Fully qualified container image name to be built by buildah.
+    - name: DOCKERFILE
+      type: string
+      default: ./Dockerfile
+      description: |
+        Path to the `Dockerfile` (or `Containerfile`) relative to the `source` workspace.
+    - name: BUILD_ARGS
+      type: array
+      default:
+        - ""
+      description: |
+        Dockerfile build arguments, array of key=value
+    - name: CONTEXT
+      type: string
+      default: "."
+      description: |
+        Path to the directory to use as context.
+    - name: STORAGE_DRIVER
+      type: string
+      default: vfs
+      description: |
+        Set buildah storage driver to reflect the currrent cluster node's
+        settings.
+    - name: FORMAT
+      description: The format of the built container, oci or docker
+      default: "oci"
+    - name: BUILD_EXTRA_ARGS
+      type: string
+      default: ""
+      description: |
+        Extra parameters passed for the build command when building images.
+    - name: PUSH_EXTRA_ARGS
+      type: string
+      default: ""
+      description: |
+        Extra parameters passed for the push command when pushing images.
+    - name: SKIP_PUSH
+      default: "false"
+      description: |
+        Skip pushing the image to the container registry.
+    - name: TLS_VERIFY
+      type: string
+      default: "true"
+      description: |
+        Sets the TLS verification flag, `true` is recommended.
+    - name: VERBOSE
+      type: string
+      default: "false"
+      description: |
+        Turns on verbose logging, all commands executed will be printed out.
+
+  results:
+    - name: IMAGE_URL
+      description: |
+        Fully qualified image name.
+    - name: IMAGE_DIGEST
+      description: |
+        Digest of the image just built.
+
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_IMAGE
+        value: "$(params.IMAGE)"
+      - name: PARAMS_CONTEXT
+        value: "$(params.CONTEXT)"
+      - name: PARAMS_DOCKERFILE
+        value: "$(params.DOCKERFILE)"
+      - name: PARAMS_FORMAT
+        value: "$(params.FORMAT)"
+      - name: PARAMS_STORAGE_DRIVER
+        value: "$(params.STORAGE_DRIVER)"
+      - name: PARAMS_BUILD_EXTRA_ARGS
+        value: "$(params.BUILD_EXTRA_ARGS)"
+      - name: PARAMS_PUSH_EXTRA_ARGS
+        value: "$(params.PUSH_EXTRA_ARGS)"
+      - name: PARAMS_SKIP_PUSH
+        value: "$(params.SKIP_PUSH)"
+      - name: PARAMS_TLS_VERIFY
+        value: "$(params.TLS_VERIFY)"
+      - name: PARAMS_VERBOSE
+        value: "$(params.VERBOSE)"
+      - name: WORKSPACES_SOURCE_BOUND
+        value: "$(workspaces.source.bound)"
+      - name: WORKSPACES_SOURCE_PATH
+        value: "$(workspaces.source.path)"
+      - name: WORKSPACES_DOCKERCONFIG_BOUND
+        value: "$(workspaces.dockerconfig.bound)"
+      - name: WORKSPACES_DOCKERCONFIG_PATH
+        value: "$(workspaces.dockerconfig.path)"
+      - name: WORKSPACES_RHEL_ENTITLEMENT_BOUND
+        value: "$(workspaces.rhel-entitlement.bound)"
+      - name: WORKSPACES_RHEL_ENTITLEMENT_PATH
+        value: "$(workspaces.rhel-entitlement.path)"
+      - name: RESULTS_IMAGE_URL_PATH
+        value: "$(results.IMAGE_URL.path)"
+      - name: RESULTS_IMAGE_DIGEST_PATH
+        value: "$(results.IMAGE_DIGEST.path)"
+
+  steps:
+    - name: build
+      image: registry.access.redhat.com/ubi8/buildah:8.10-5
+      workingDir: $(workspaces.source.path)
+      args:
+        - $(params.BUILD_ARGS[*])
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAojCiMgV3JhcHBlciBhcm91bmQgImJ1aWxkYWggYnVkIiB0byBidWlsZCBhbmQgcHVzaCBhIGNvbnRhaW5lciBpbWFnZSBiYXNlZCBvbiBhIERvY2tlcmZpbGUuCiMKCnNob3B0IC1zIGluaGVyaXRfZXJyZXhpdApzZXQgLWV1IC1vIHBpcGVmYWlsCgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvY29tbW9uLnNoIgpzb3VyY2UgIiQoZGlybmFtZSAke0JBU0hfU09VUkNFWzBdfSkvYnVpbGRhaC1jb21tb24uc2giCgpmdW5jdGlvbiBfYnVpbGRhaCgpIHsKICAgIGJ1aWxkYWggXAogICAgICAgIC0tc3RvcmFnZS1kcml2ZXI9IiR7UEFSQU1TX1NUT1JBR0VfRFJJVkVSfSIgXAogICAgICAgIC0tdGxzLXZlcmlmeT0iJHtQQVJBTVNfVExTX1ZFUklGWX0iIFwKICAgICAgICAiJEAiCn0KCiMKIyBQcmVwYXJlCiMKCiMgbWFraW5nIHN1cmUgdGhlIHJlcXVpcmVkIHdvcmtzcGFjZSAic291cmNlIiBpcyBib3VuZGVkLCB3aGljaCBtZWFucyBpdHMgdm9sdW1lIGlzIGN1cnJlbnRseSBtb3VudGVkCiMgYW5kIHJlYWR5IHRvIHVzZQpwaGFzZSAiSW5zcGVjdGluZyBzb3VyY2Ugd29ya3NwYWNlICcke1dPUktTUEFDRVNfU09VUkNFX1BBVEh9JyAoUFdEPScke1BXRH0nKSIKW1sgIiR7V09SS1NQQUNFU19TT1VSQ0VfQk9VTkR9IiAhPSAidHJ1ZSIgXV0gJiYKICAgIGZhaWwgIldvcmtzcGFjZSAnc291cmNlJyBpcyBub3QgYm91bmRlZCIKCnBoYXNlICJBc3NlcnRpbmcgdGhlIGRvY2tlcmZpbGUvY29udGFpbmVyZmlsZSAnJHtET0NLRVJGSUxFX0ZVTEx9JyBleGlzdHMiCltbICEgLWYgIiR7RE9DS0VSRklMRV9GVUxMfSIgXV0gJiYKICAgIGZhaWwgIkRvY2tlcmZpbGUgbm90IGZvdW5kIGF0OiAnJHtET0NLRVJGSUxFX0ZVTEx9JyIKCnBoYXNlICJJbnNwZWN0aW5nIGNvbnRleHQgJyR7UEFSQU1TX0NPTlRFWFR9JyIKW1sgISAtZCAiJHtQQVJBTVNfQ09OVEVYVH0iIF1dICYmCiAgICBmYWlsICJDT05URVhUIHBhcmFtIGlzIG5vdCBmb3VuZCBhdCAnJHtQQVJBTVNfQ09OVEVYVH0nLCBvbiBzb3VyY2Ugd29ya3NwYWNlIgoKcGhhc2UgIkJ1aWxkaW5nIGJ1aWxkIGFyZ3MiCkJVSUxEX0FSR1M9KCkKZm9yIGJ1aWxkYXJnIGluICIkQCI7IGRvCiAgICBCVUlMRF9BUkdTKz0oIi0tYnVpbGQtYXJnPSRidWlsZGFyZyIpCmRvbmUKCiMgSGFuZGxlIG9wdGlvbmFsIGRvY2tlcmNvbmZpZyBzZWNyZXQKaWYgW1sgIiR7V09SS1NQQUNFU19ET0NLRVJDT05GSUdfQk9VTkR9IiA9PSAidHJ1ZSIgXV07IHRoZW4KCiAgICAjIGlmIGNvbmZpZy5qc29uIGV4aXN0cyBhdCB3b3Jrc3BhY2Ugcm9vdCwgd2UgdXNlIHRoYXQKICAgIGlmIHRlc3QgLWYgIiR7V09SS1NQQUNFU19ET0NLRVJDT05GSUdfUEFUSH0vY29uZmlnLmpzb24iOyB0aGVuCiAgICAgICAgZXhwb3J0IERPQ0tFUl9DT05GSUc9IiR7V09SS1NQQUNFU19ET0NLRVJDT05GSUdfUEFUSH0iCgogICAgICAgICMgZWxzZSB3ZSBsb29rIGZvciAuZG9ja2VyY29uZmlnanNvbiBhdCB0aGUgcm9vdAogICAgZWxpZiB0ZXN0IC1mICIke1dPUktTUEFDRVNfRE9DS0VSQ09ORklHX1BBVEh9Ly5kb2NrZXJjb25maWdqc29uIjsgdGhlbgogICAgICAgICMgZW5zdXJlIC5kb2NrZXIgZXhpc3QgYmVmb3JlIHRoZSBjb3B5aW5nIHRoZSBjb250ZW50CiAgICAgICAgaWYgWyAhIC1kICIkSE9NRS8uZG9ja2VyIiBdOyB0aGVuCiAgICAgICAgICAgbWtkaXIgLXAgIiRIT01FLy5kb2NrZXIiCiAgICAgICAgZmkKICAgICAgICBjcCAiJHtXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19QQVRIfS8uZG9ja2VyY29uZmlnanNvbiIgIiRIT01FLy5kb2NrZXIvY29uZmlnLmpzb24iCiAgICAgICAgZXhwb3J0IERPQ0tFUl9DT05GSUc9IiRIT01FLy5kb2NrZXIiCgogICAgICAgICMgbmVlZCB0byBlcnJvciBvdXQgaWYgbmVpdGhlciBmaWxlcyBhcmUgcHJlc2VudAogICAgZWxzZQogICAgICAgIGVjaG8gIm5laXRoZXIgJ2NvbmZpZy5qc29uJyBub3IgJy5kb2NrZXJjb25maWdqc29uJyBmb3VuZCBhdCB3b3Jrc3BhY2Ugcm9vdCIKICAgICAgICBleGl0IDEKICAgIGZpCmZpCgpFTlRJVExFTUVOVF9WT0xVTUU9IiIKaWYgW1sgIiR7V09SS1NQQUNFU19SSEVMX0VOVElUTEVNRU5UX0JPVU5EfSIgPT0gInRydWUiIF1dOyB0aGVuCiAgICBFTlRJVExFTUVOVF9WT0xVTUU9Ii0tdm9sdW1lICR7V09SS1NQQUNFU19SSEVMX0VOVElUTEVNRU5UX1BBVEh9Oi9ldGMvcGtpL2VudGl0bGVtZW50OnJvIgpmaQoKIwojIEJ1aWxkCiMKCnBoYXNlICJCdWlsZGluZyAnJHtQQVJBTVNfSU1BR0V9JyBiYXNlZCBvbiAnJHtET0NLRVJGSUxFX0ZVTEx9JyIKCltbIC1uICIke1BBUkFNU19CVUlMRF9FWFRSQV9BUkdTfSIgXV0gJiYKICAgIHBoYXNlICJFeHRyYSAnYnVpbGRhaCBidWQnIGFyZ3VtZW50cyBpbmZvcm1lZDogJyR7UEFSQU1TX0JVSUxEX0VYVFJBX0FSR1N9JyIKCiMgUHJvY2VzcyBCVUlMRF9FWFRSQV9BUkdTCmJ1aWxkX2V4dHJhX2FyZ3NfdG1wPSQoZWNobyAiJHtQQVJBTVNfQlVJTERfRVhUUkFfQVJHUzotfSIgfCB4YXJncyAtbjEpCmlmIFtbIC1uICIkYnVpbGRfZXh0cmFfYXJnc190bXAiIF1dOyB0aGVuCiAgICByZWFkYXJyYXkgLXQgYnVpbGRfZXh0cmFfYXJncyA8PDwgIiRidWlsZF9leHRyYV9hcmdzX3RtcCIKZWxzZQogICAgYnVpbGRfZXh0cmFfYXJncz0oKSAjIEVtcHR5IGFycmF5IGlmIG5vIGV4dHJhIGFyZ3MKZmkKCl9idWlsZGFoIGJ1ZCAiJHtidWlsZF9leHRyYV9hcmdzW0BdfSIgXAogICAgJEVOVElUTEVNRU5UX1ZPTFVNRSBcCiAgICAiJHtCVUlMRF9BUkdTW0BdfSIgXAogICAgLS1maWxlPSIke0RPQ0tFUkZJTEVfRlVMTH0iIFwKICAgIC0tdGFnPSIke1BBUkFNU19JTUFHRX0iIFwKICAgICIke1BBUkFNU19DT05URVhUfSIKCmlmIFtbICIke1BBUkFNU19TS0lQX1BVU0h9IiA9PSAidHJ1ZSIgXV07IHRoZW4KICAgIHBoYXNlICJTa2lwcGluZyBwdXNoaW5nICcke1BBUkFNU19JTUFHRX0nIHRvIHRoZSBjb250YWluZXIgcmVnaXN0cnkhIgogICAgZXhpdCAwCmZpCgojCiMgUHVzaAojCgpwaGFzZSAiUHVzaGluZyAnJHtQQVJBTVNfSU1BR0V9JyB0byB0aGUgY29udGFpbmVyIHJlZ2lzdHJ5IgoKW1sgLW4gIiR7UEFSQU1TX1BVU0hfRVhUUkFfQVJHU30iIF1dICYmCiAgICBwaGFzZSAiRXh0cmEgJ2J1aWxkYWggcHVzaCcgYXJndW1lbnRzIGluZm9ybWVkOiAnJHtQQVJBTVNfUFVTSF9FWFRSQV9BUkdTfSciCgojIHRlbXBvcmFyeSBmaWxlIHRvIHN0b3JlIHRoZSBpbWFnZSBkaWdlc3QsIGluZm9ybWF0aW9uIG9ubHkgb2J0YWluZWQgYWZ0ZXIgcHVzaGluZyB0aGUgaW1hZ2UgdG8gdGhlCiMgY29udGFpbmVyIHJlZ2lzdHJ5CmRlY2xhcmUgLXIgZGlnZXN0X2ZpbGU9Ii90bXAvYnVpbGRhaC1kaWdlc3QudHh0IgoKIyBQcm9jZXNzIFBVU0hfRVhUUkFfQVJHUwpwdXNoX2V4dHJhX2FyZ3NfdG1wPSQoZWNobyAiJHtQQVJBTVNfUFVTSF9FWFRSQV9BUkdTOi19IiB8IHhhcmdzIC1uMSkKaWYgW1sgLW4gIiRwdXNoX2V4dHJhX2FyZ3NfdG1wIiBdXTsgdGhlbgogICAgcmVhZGFycmF5IC10IHB1c2hfZXh0cmFfYXJncyA8PDwgIiRwdXNoX2V4dHJhX2FyZ3NfdG1wIgplbHNlCiAgICBwdXNoX2V4dHJhX2FyZ3M9KCkgIyBFbXB0eSBhcnJheSBpZiBubyBleHRyYSBhcmdzCmZpCgpfYnVpbGRhaCBwdXNoICIke3B1c2hfZXh0cmFfYXJnc1tAXX0iIFwKICAgIC0tZGlnZXN0ZmlsZT0iJHtkaWdlc3RfZmlsZX0iIFwKICAgICIke1BBUkFNU19JTUFHRX0iIFwKICAgICJkb2NrZXI6Ly8ke1BBUkFNU19JTUFHRX0iCgojCiMgUmVzdWx0cwojCgpwaGFzZSAiSW5zcGVjdGluZyBkaWdlc3QgcmVwb3J0ICgnJHtkaWdlc3RfZmlsZX0nKSIKCltbICEgLXIgIiR7ZGlnZXN0X2ZpbGV9IiBdXSAmJgogICAgZmFpbCAiVW5hYmxlIHRvIGZpbmQgZGlnZXN0LWZpbGUgYXQgJyR7ZGlnZXN0X2ZpbGV9JyIKCmRlY2xhcmUgLXIgZGlnZXN0X3N1bT0iJChjYXQgJHtkaWdlc3RfZmlsZX0pIgoKW1sgLXogIiR7ZGlnZXN0X3N1bX0iIF1dICYmCiAgICBmYWlsICJEaWdlc3QgZmlsZSAnJHtkaWdlc3RfZmlsZX0nIGlzIGVtcHR5ISIKCnBoYXNlICJTdWNjZXNzZnVseSBidWlsdCBjb250YWluZXIgaW1hZ2UgJyR7UEFSQU1TX0lNQUdFfScgKCcke2RpZ2VzdF9zdW19JykiCmVjaG8gLW4gIiR7UEFSQU1TX0lNQUdFfSIgfCB0ZWUgJHtSRVNVTFRTX0lNQUdFX1VSTF9QQVRIfQplY2hvIC1uICIke2RpZ2VzdF9zdW19IiB8IHRlZSAke1JFU1VMVFNfSU1BR0VfRElHRVNUX1BBVEh9Cg==" |base64 -d >"/scripts/buildah-bud.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggUEFSQU1TX0lNQUdFPSIke1BBUkFNU19JTUFHRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0RPQ0tFUkZJTEU9IiR7UEFSQU1TX0RPQ0tFUkZJTEU6LX0iCmRlY2xhcmUgLXggUEFSQU1TX0NPTlRFWFQ9IiR7UEFSQU1TX0NPTlRFWFQ6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19TVE9SQUdFX0RSSVZFUj0iJHtQQVJBTVNfU1RPUkFHRV9EUklWRVI6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19CVUlMRF9FWFRSQV9BUkdTPSIke1BBUkFNU19CVUlMRF9FWFRSQV9BUkdTOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfUFVTSF9FWFRSQV9BUkdTPSIke1BBUkFNU19QVVNIX0VYVFJBX0FSR1M6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19TS0lQX1BVU0g9IiR7UEFSQU1TX1NLSVBfUFVTSDotfSIKZGVjbGFyZSAtcnggUEFSQU1TX1RMU19WRVJJRlk9IiR7UEFSQU1TX1RMU19WRVJJRlk6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19WRVJCT1NFPSIke1BBUkFNU19WRVJCT1NFOi19IgoKZGVjbGFyZSAtcnggV09SS1NQQUNFU19TT1VSQ0VfUEFUSD0iJHtXT1JLU1BBQ0VTX1NPVVJDRV9QQVRIOi19IgpkZWNsYXJlIC1yeCBXT1JLU1BBQ0VTX1NPVVJDRV9CT1VORD0iJHtXT1JLU1BBQ0VTX1NPVVJDRV9CT1VORDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19ET0NLRVJDT05GSUdfUEFUSD0iJHtXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19QQVRIOi19IgpkZWNsYXJlIC1yeCBXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19CT1VORD0iJHtXT1JLU1BBQ0VTX0RPQ0tFUkNPTkZJR19CT1VORDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19SSEVMX0VOVElUTEVNRU5UX1BBVEg9IiR7V09SS1NQQUNFU19SSEVMX0VOVElUTEVNRU5UX1BBVEg6LX0iCmRlY2xhcmUgLXJ4IFdPUktTUEFDRVNfUkhFTF9FTlRJVExFTUVOVF9CT1VORD0iJHtXT1JLU1BBQ0VTX1JIRUxfRU5USVRMRU1FTlRfQk9VTkQ6LX0iCgpkZWNsYXJlIC1yeCBSRVNVTFRTX0lNQUdFX0RJR0VTVF9QQVRIPSIke1JFU1VMVFNfSU1BR0VfRElHRVNUX1BBVEg6LX0iCmRlY2xhcmUgLXJ4IFJFU1VMVFNfSU1BR0VfVVJMX1BBVEg9IiR7UkVTVUxUU19JTUFHRV9VUkxfUEFUSDotfSIKCiMKIyBEb2NrZXJmaWxlCiMKCiMgRXhwb3NpbmcgdGhlIGZ1bGwgcGF0aCB0byB0aGUgY29udGFpbmVyIGZpbGUsIHdoaWNoIGJ5IGRlZmF1bHQgc2hvdWxkIGJlIHJlbGF0aXZlIHRvIHRoZSBwcmltYXJ5CiMgd29ya3NwYWNlLCB3aXRoIGEgZmFsbGJhY2sgdG8gYmUgcmVsYXRpdmUgdG8gdGhlIGNvbnRleHQgZGlyZWN0b3J5LgppZiBbWyAteiAiJHtET0NLRVJGSUxFX0ZVTEw6LX0iIF1dOyB0aGVuCiAgICBpZiBbWyAtciAiJHtXT1JLU1BBQ0VTX1NPVVJDRV9QQVRIfS8ke1BBUkFNU19ET0NLRVJGSUxFfSIgXV07IHRoZW4KICAgICAgICBkZWNsYXJlIC14IERPQ0tFUkZJTEVfRlVMTD0iJHtXT1JLU1BBQ0VTX1NPVVJDRV9QQVRIfS8ke1BBUkFNU19ET0NLRVJGSUxFfSIKICAgIGVsc2UKICAgICAgICBkZWNsYXJlIC14IERPQ0tFUkZJTEVfRlVMTD0iJHtXT1JLU1BBQ0VTX1NPVVJDRV9QQVRIfS8ke1BBUkFNU19DT05URVhUfS8ke1BBUkFNU19ET0NLRVJGSUxFfSIKICAgIGZpCmZpCgojCiMgQXNzZXJ0aW5nIEVudmlyb25tZW50CiMKCltbICEgLXIgIiR7RE9DS0VSRklMRV9GVUxMfSIgXV0gJiYKICAgIGZhaWwgInVuYWJsZSB0byBmaW5kIHRoZSBEb2NrZXJmaWxlLCBET0NLRVJGSUxFIG1heSBoYXZlIGFuIGluY29ycmVjdCBsb2NhdGlvbiIKCmV4cG9ydGVkX29yX2ZhaWwgXAogICAgV09SS1NQQUNFU19TT1VSQ0VfUEFUSCBcCiAgICBQQVJBTVNfSU1BR0UKCiMKIyBWZXJib3NlIE91dHB1dAojCgppZiBbWyAiJHtQQVJBTVNfVkVSQk9TRX0iID09ICJ0cnVlIiBdXTsgdGhlbgogICAgc2V0IC14CmZpCg==" |base64 -d >"/scripts/buildah-common.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0ZWt0b24ncyBob21lIGRpcmVjdG9yeQpkZWNsYXJlIC1yeCBURUtUT05fSE9NRT0iJHtURUtUT05fSE9NRTotL3Rla3Rvbi9ob21lfSIKCiMKIyBGdW5jdGlvbnMKIwoKZnVuY3Rpb24gZmFpbCgpIHsKICAgIGVjaG8gIkVSUk9SOiAkeyp9IiAyPiYxCiAgICBleGl0IDEKfQoKZnVuY3Rpb24gcGhhc2UoKSB7CiAgICBlY2hvICItLS0+IFBoYXNlOiAkeyp9Li4uIgp9CgojIGFzc2VydCBsb2NhbCB2YXJpYWJsZXMgYXJlIGV4cG9ydGVkIG9uIHRoZSBlbnZpcm9ubWVudApmdW5jdGlvbiBleHBvcnRlZF9vcl9mYWlsKCkgewogICAgZGVjbGFyZSAtYSBfcmVxdWlyZWRfdmFycz0iJHtAfSIKCiAgICBmb3IgdiBpbiAke19yZXF1aXJlZF92YXJzW0BdfTsgZG8KICAgICAgICBbWyAteiAiJHshdn0iIF1dICYmCiAgICAgICAgICAgIGZhaWwgIicke3Z9JyBlbnZpcm9ubWVudCB2YXJpYWJsZSBpcyBub3Qgc2V0ISIKICAgIGRvbmUKCiAgICByZXR1cm4gMAp9Cg==" |base64 -d >"/scripts/common.sh"
+        ls /scripts/buildah-*.sh;
+        chmod +x /scripts/buildah-*.sh;echo "Running Script /scripts/buildah-bud.sh";
+          /scripts/buildah-bud.sh;
+      securityContext:
+        capabilities:
+          add: ["SETFCAP"]
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
