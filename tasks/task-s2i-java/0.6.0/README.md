@@ -64,7 +64,7 @@ All of the s2i tasks use the `source` workspace which is meant to contain the Ap
 | Param             | Type   | Default                  | Description                                                               |
 | ----------------- | ------ | ------------------------ | ------------------------------------------------------------------------- |
 | IMAGE             | string | (required)               | Fully qualified container image name to be built by s2i                   |
-| IMAGE_SCRIPTS_URL | string | image:///usr/libexec/s2i | URL containing the default assemble and run scripts for the builder image |
+| IMAGE_SCRIPTS_URL | string | image:///usr/local/s2i | URL containing the default assemble and run scripts for the builder image |
 | ENV_VARS          | array  | []                       | Array containing string of Environment Variables as "KEY=VALUE”           |
 | SUBDIRECTORY      | string | .                        | Relative subdirectory to the source Workspace for the build-context.      |
 | STORAGE_DRIVER    | string | overlay                  | Set buildah storage driver to reflect the currrent cluster node's         |
