@@ -28,3 +28,6 @@ repositories:
 - url: https://github.com/openshift-pipelines/tekton-caches
   types:
   - stepactions
+- url: https://github.com/redhat-developer/dotnet-tekton-tasks
+  types:
+  - tasks
