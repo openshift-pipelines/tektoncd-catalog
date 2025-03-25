@@ -1,0 +1,230 @@
+﻿apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dotnet-publish-image
+  labels:
+    app.kubernetes.io/version: 0.1.0
+  annotations:
+    tekton.dev/source: "https://github.com/redhat-developer/dotnet-tekton-tasks"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: Red Hat
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: .NET
+    tekton.dev/pipelines.minVersion: 0.41.0
+    tekton.dev/platforms: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
+    tekton.dev/tags: dotnet
+    tekton.dev/displayName: "dotnet publish image"
+spec:
+  description: >-
+    The 'dotnet-publish-image' task builds a container image from a .NET project
+    and pushes it to a container registry using the .NET SDK's built-in container tooling.
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the application image.
+    - name: IMAGE
+      description: Fully qualified application image name with digest.
+  params:
+    - name: SDK_IMAGE
+      description: Fully qualified name of the .NET SDK image used to build the application image.
+      type: string
+    - name: PROJECT
+      description: Path of the .NET project file in the source workspace.
+      type: string
+    - name: IMAGE_NAME
+      description: |
+        Name of the application image repository to push to.
+        When the name does not include a registry, the 'SDK_IMAGE' registry is used.
+      type: string
+    - name: BASE_IMAGE
+      description: |
+        When set, overrides the base image used for the application image.
+        When the name does not include a registry, the 'SDK_IMAGE' registry is used.
+        If the name does not include a tag, the .NET project target version is used (for example: '9.0').
+        The current Kubernetes namespace can be used in the name via '$(context.taskRun.namespace)'.
+      type: string
+      default: ""
+    - name: PRE_PUBLISH_SCRIPT
+      description: |
+        Shell commands to run before publishing the image.
+        The shell is configured to exit immediately when commands fail with a non-zero status.
+      type: string
+      default: ""
+    - name: VERBOSITY
+      description: MSBuild verbosity level. Allowed values are 'q[uiet]', 'm[inimal]', 'n[ormal]', 'd[etailed]', and 'diag[nostic]'.
+      default: "minimal"
+      type: string
+    - name: BUILD_PROPS
+      type: array
+      description: MSBuild properties to pass to the publish command.
+      default: []
+    - name: ENV_VARS
+      type: array
+      description: Environment variables.
+      default: []
+  workspaces:
+    - name: source
+      description: .NET source code.
+      mountPath: /workspace/source
+    - name: dockerconfig
+      description: >-
+        An optional workspace that allows providing additional credentials to access the container registry using the '.docker/config.json' format.
+        A file should be placed at the root of the workspace with a name of 'config.json' or '.dockerconfigjson'.
+      optional: true
+  steps:
+    - name: publish-image
+      image: $(params.SDK_IMAGE)
+      args:
+        - "--env-vars"
+        - "$(params.ENV_VARS[*])"
+        - "--build-props"
+        - "$(params.BUILD_PROPS[*])"
+      env:
+        - name: CurrentKubernetesNamespace
+          value: $(context.taskRun.namespace)
+        - name: RunningInTekton
+          value: "true"
+        - name: WORKSPACE_SOURCE_BOUND
+          value: $(workspaces.source.bound)
+        - name: WORKSPACE_SOURCE_PATH
+          value: $(workspaces.source.path)
+        - name: WORKSPACE_DOCKERCONFIG_BOUND
+          value: $(workspaces.dockerconfig.bound)
+        - name: WORKSPACE_DOCKERCONFIG_PATH
+          value: $(workspaces.dockerconfig.path)
+        - name: PARAM_PROJECT
+          value: $(params.PROJECT)
+        - name: PARAM_IMAGE_NAME
+          value: $(params.IMAGE_NAME)
+        - name: PARAM_SDK_IMAGE
+          value: $(params.SDK_IMAGE)
+        - name: PARAM_BASE_IMAGE
+          value: $(params.BASE_IMAGE)
+        - name: PARAM_VERBOSITY
+          value: $(params.VERBOSITY)
+        - name: PARAM_PRE_PUBLISH_SCRIPT
+          value: $(params.PRE_PUBLISH_SCRIPT)
+      script: |
+        #!/usr/bin/env bash
+        
+        set -euo pipefail
+        
+        declare -a PARAM_BUILD_PROPS
+        parsing_flag=""
+        for arg in "$@"; do
+          if [[ "$arg" == "--env-vars" ]] || [[ "$arg" == "--build-props" ]]; then
+            parsing_flag="${arg:2}"
+          elif [[ "$parsing_flag" == "env-vars" ]]; then
+            export "${arg?}"
+          elif [[ "$parsing_flag" == "build-props" ]]; then
+            if [[ "$arg" == *\;* ]] && [[ "$arg" != *=\"*\" ]]; then
+              echo "error: Invalid BUILD_PROPS property: '""$arg""'." >&2
+              echo "To assign a list of values, the values must be enclosed with double quotes. For example: MyProperty=\"Value1;Value2\"." >&2
+              exit 1
+            fi
+            PARAM_BUILD_PROPS+=("$arg")
+          fi
+        done
+        
+        if [[ "$WORKSPACE_DOCKERCONFIG_BOUND" == "true" ]]; then
+          mkdir -p ~/.config/containers
+          [[ -f "$WORKSPACE_DOCKERCONFIG_PATH/config.json" ]] && [[ -f "$WORKSPACE_DOCKERCONFIG_PATH/.dockerconfigjson" ]] && \
+            echo "error: 'dockerconfig' workspace provides multiple config files." >&2 && \
+            echo "The config must provided using a single '.dockerconfigjson' or a single 'config.json' file." >&2 && \
+            exit 1
+          [[ -f "$WORKSPACE_DOCKERCONFIG_PATH/config.json" ]] && ln -s "$WORKSPACE_DOCKERCONFIG_PATH/config.json" ~/.config/containers/auth.json
+          [[ -f "$WORKSPACE_DOCKERCONFIG_PATH/.dockerconfigjson" ]] && ln -s "$WORKSPACE_DOCKERCONFIG_PATH/.dockerconfigjson" ~/.config/containers/auth.json
+        fi
+        
+        cd "$WORKSPACE_SOURCE_PATH"
+        
+        if [[ -n "$PARAM_PRE_PUBLISH_SCRIPT" ]]; then
+          eval "$PARAM_PRE_PUBLISH_SCRIPT"
+        
+          # Reset flags and working dir.
+          set -euo pipefail
+          if [[ "$WORKSPACE_SOURCE_BOUND" == "true" ]]; then
+            cd "$WORKSPACE_SOURCE_PATH"
+          else
+            cd ~/src
+          fi
+        fi
+        
+        DOTNET_SDK_VERSION=$(dotnet --version)
+        if [ "${DOTNET_SDK_VERSION%%.*}" -lt 9 ]; then
+          echo "error: The Task requires a .NET SDK 9.0 or higher. The SDK has version $DOTNET_SDK_VERSION." >&2
+          exit 1
+        fi
+        
+        SDK_IMAGE="$PARAM_SDK_IMAGE"
+        SDK_IMAGE_REPOSITORY="${SDK_IMAGE%%/*}"
+        
+        BASE_IMAGE="$PARAM_BASE_IMAGE"
+        if [[ -n "$BASE_IMAGE" ]]; then
+          # If the name includes no repository, use the SDK image repository.
+          if [[ "${BASE_IMAGE%%/*}" != *.* ]]; then
+            BASE_IMAGE="$SDK_IMAGE_REPOSITORY/$BASE_IMAGE"
+          fi
+        fi
+        
+        IMAGE_NAME="$PARAM_IMAGE_NAME"
+        # If the name includes no repository, use the SDK image repository.
+        if [[ "${IMAGE_NAME%%/*}" != *.* ]]; then
+          IMAGE_NAME="${SDK_IMAGE_REPOSITORY}/$IMAGE_NAME"
+        fi
+        
+        # Determine properties used by the .NET SDK container tooling.
+        # Extract the repository
+        ContainerRegistry="${IMAGE_NAME%%/*}"
+        ContainerRepository="${IMAGE_NAME#*/}"
+        ContainerImageTag="latest"
+        # Extract the tag (if there is one)
+        if [[ "$ContainerRepository" == *:* ]]; then
+          ContainerImageTag="${ContainerRepository##*:}"
+          ContainerRepository="${ContainerRepository%:*}"
+        fi
+        
+        if [[ -n "$BASE_IMAGE" ]]; then
+        cat >/tmp/OverrideBaseImage.targets <<'EOF'
+        <Project>
+          <Target Name="ComputeOverrideBaseImage" BeforeTargets="ComputeContainerBaseImage">
+            <PropertyGroup>
+              <ContainerBaseImage>$(BASE_IMAGE)</ContainerBaseImage>
+              <_containerFamilySuffix/>
+              <_containerFamilySuffix Condition="'$(ContainerFamily)' != ''">-$(ContainerFamily)</_containerFamilySuffix>
+              <!-- If no tag was specified, use the target framework version as the tag. -->
+              <ContainerBaseImage Condition="$(ContainerBaseImage.Substring($(ContainerBaseImage.LastIndexOf('/'))).IndexOfAny(':@')) == -1"
+              >$(ContainerBaseImage):$(_TargetFrameworkVersionWithoutV)$(_containerFamilySuffix)</ContainerBaseImage>
+              <!-- Append ContainerFamily. -->
+            </PropertyGroup>
+          </Target>
+        </Project>
+        EOF
+        fi
+        
+        declare -a PUBLISH_ARGS
+        if [[ -n "$BASE_IMAGE" ]]; then
+          # Clear ContainerFamily but allow it to be overridden by PARAM_BUILD_PROPS.
+          PUBLISH_ARGS+=( "-p:ContainerFamily=" )
+        fi
+        PUBLISH_ARGS+=( "${PARAM_BUILD_PROPS[@]/#/-p:}" )
+        PUBLISH_ARGS+=( "--getProperty:GeneratedContainerDigest" "--getResultOutputFile:/tmp/IMAGE_DIGEST" )
+        PUBLISH_ARGS+=( "-v" "$PARAM_VERBOSITY" )
+        PUBLISH_ARGS+=( "-p:ContainerRegistry=$ContainerRegistry" "-p:ContainerRepository=$ContainerRepository" -p:ContainerImageTag= "-p:ContainerImageTags=$ContainerImageTag" )
+        if [[ -n "$BASE_IMAGE" ]]; then
+          PUBLISH_ARGS+=( "-p:CustomBeforeDirectoryBuildProps=/tmp/OverrideBaseImage.targets" "-p:BASE_IMAGE=$BASE_IMAGE" )
+        fi
+        PUBLISH_ARGS+=( "/t:PublishContainer" )
+        PUBLISH_ARGS+=( "$PARAM_PROJECT" )
+        dotnet publish  "${PUBLISH_ARGS[@]}"
+        
+        RESULT_IMAGE_DIGEST=$(cat /tmp/IMAGE_DIGEST)
+        RESULT_IMAGE="$ContainerRegistry/$ContainerRepository@$RESULT_IMAGE_DIGEST"
+        
+        printf "%s" "$RESULT_IMAGE_DIGEST" >/tekton/results/IMAGE_DIGEST
+        printf "%s" "$RESULT_IMAGE" >/tekton/results/IMAGE
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
