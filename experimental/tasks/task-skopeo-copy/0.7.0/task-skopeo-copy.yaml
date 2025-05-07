@@ -1,0 +1,124 @@
+---
+# Source: task-containers/templates/task-skopeo-copy.yaml
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: skopeo-copy
+  labels:
+    app.kubernetes.io/version: 0.7.0
+  annotations:
+    tekton.dev/source: "https://github.com/openshift-pipelines/task-containers"
+    artifacthub.io/category: integration-delivery
+    artifacthub.io/maintainers: |
+      - name: OpenShift Pipeline task maintainers
+        email: pipelines-extcomm@redhat.com
+    artifacthub.io/provider: Red Hat
+    artifacthub.io/recommendations: |
+      - url: https://tekton.dev/
+    tekton.dev/categories: containers
+    tekton.dev/pipelines.minVersion: 0.41.0
+    tekton.dev/tags: containers
+spec:
+  description: |
+    Skopeo is a command line tool for working with remote image registries.
+    Skopeo doesn’t require a daemon to be running while performing its operations. In particular,
+    the handy skopeo command called copy will ease the whole image copy operation. 
+    The copy command will take care of copying the image from internal.registry to production.registry.
+    If your production registry requires credentials to login in order to push the image, skopeo can handle that as well.
+    After copying the source and destination images SHA256 digest is stored as results.
+  workspaces:
+    - name: images_url
+      optional: true
+      description: |
+        For storing image urls in case of more than one image to copy. It must have a url.txt file at the root path
+        containing a source and a destination image separated by a space on each line.
+  params:
+    - name: SOURCE_IMAGE_URL
+      type: string
+      default: ""
+      description: |
+        Fully qualified source container image name, including tag, to be copied
+        into `DESTINATION_IMAGE_URL` param.
+    - name: DESTINATION_IMAGE_URL
+      type: string
+      default: ""
+      description: |
+        Fully qualified destination container image name, including tag.
+    - name: SRC_TLS_VERIFY
+      type: string
+      default: "true"
+      description: |
+        Sets the TLS verification flags for the source registry, `true` is recommended.
+    - name: DEST_TLS_VERIFY
+      type: string
+      default: "true"
+      description: |
+        Sets the TLS verification flags for the destination registry, `true` is recommended.
+    - name: VERBOSE
+      type: string
+      default: "false"
+      description: |
+        Shows a more verbose (debug) output.
+    - name: ARGS
+      default: ""
+      type: string
+      description: |
+        Additional args for skopeo copy command
+
+  results:
+    - name: SOURCE_DIGEST
+      type: string
+      description: |
+        Source image SHA256 digest.
+    - name: DESTINATION_DIGEST
+      type: string
+      description: |
+        Destination image SHA256 digest.
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
+
+  stepTemplate:
+    env:
+      
+      - name: PARAMS_SOURCE_IMAGE_URL
+        value: "$(params.SOURCE_IMAGE_URL)"
+      - name: PARAMS_DESTINATION_IMAGE_URL
+        value: "$(params.DESTINATION_IMAGE_URL)"
+      - name: PARAMS_SRC_TLS_VERIFY
+        value: "$(params.SRC_TLS_VERIFY)"
+      - name: PARAMS_DEST_TLS_VERIFY
+        value: "$(params.DEST_TLS_VERIFY)"
+      - name: PARAMS_VERBOSE
+        value: "$(params.VERBOSE)"
+      - name: PARAMS_ARGS
+        value: "$(params.ARGS)"
+      - name: WORKSPACES_IMAGES_URL_BOUND
+        value: "$(workspaces.images_url.bound)"
+      - name: WORKSPACES_IMAGES_URL_PATH
+        value: "$(workspaces.images_url.path)"
+      - name: RESULTS_SOURCE_DIGEST_PATH
+        value: "$(results.SOURCE_DIGEST.path)"
+      - name: RESULTS_DESTINATION_DIGEST_PATH
+        value: "$(results.DESTINATION_DIGEST.path)"
+
+  steps:
+    - name: skopeo-copy
+      env:
+        - name: HOME
+          value: /workspace/home
+      image: registry.access.redhat.com/ubi8/skopeo:8.10-5
+      script: |
+        set -e
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKIyB0ZWt0b24ncyBob21lIGRpcmVjdG9yeQpkZWNsYXJlIC1yeCBURUtUT05fSE9NRT0iJHtURUtUT05fSE9NRTotL3Rla3Rvbi9ob21lfSIKCiMKIyBGdW5jdGlvbnMKIwoKZnVuY3Rpb24gZmFpbCgpIHsKICAgIGVjaG8gIkVSUk9SOiAkeyp9IiAyPiYxCiAgICBleGl0IDEKfQoKZnVuY3Rpb24gcGhhc2UoKSB7CiAgICBlY2hvICItLS0+IFBoYXNlOiAkeyp9Li4uIgp9CgojIGFzc2VydCBsb2NhbCB2YXJpYWJsZXMgYXJlIGV4cG9ydGVkIG9uIHRoZSBlbnZpcm9ubWVudApmdW5jdGlvbiBleHBvcnRlZF9vcl9mYWlsKCkgewogICAgZGVjbGFyZSAtYSBfcmVxdWlyZWRfdmFycz0iJHtAfSIKCiAgICBmb3IgdiBpbiAke19yZXF1aXJlZF92YXJzW0BdfTsgZG8KICAgICAgICBbWyAteiAiJHshdn0iIF1dICYmCiAgICAgICAgICAgIGZhaWwgIicke3Z9JyBlbnZpcm9ubWVudCB2YXJpYWJsZSBpcyBub3Qgc2V0ISIKICAgIGRvbmUKCiAgICByZXR1cm4gMAp9Cg==" |base64 -d >"/scripts/common.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKZGVjbGFyZSAtcnggUEFSQU1TX1NPVVJDRV9JTUFHRV9VUkw9IiR7UEFSQU1TX1NPVVJDRV9JTUFHRV9VUkw6LX0iCmRlY2xhcmUgLXJ4IFBBUkFNU19ERVNUSU5BVElPTl9JTUFHRV9VUkw9IiR7UEFSQU1TX0RFU1RJTkFUSU9OX0lNQUdFX1VSTDotfSIKZGVjbGFyZSAtcnggUEFSQU1TX1NSQ19UTFNfVkVSSUZZPSIke1BBUkFNU19TUkNfVExTX1ZFUklGWTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0RFU1RfVExTX1ZFUklGWT0iJHtQQVJBTVNfREVTVF9UTFNfVkVSSUZZOi19IgpkZWNsYXJlIC1yeCBQQVJBTVNfVkVSQk9TRT0iJHtQQVJBTVNfVkVSQk9TRTotfSIKZGVjbGFyZSAtcnggUEFSQU1TX0FSR1M9IiR7UEFSQU1TX0FSR1M6LX0iCgpkZWNsYXJlIC1yeCBXT1JLU1BBQ0VTX0lNQUdFU19VUkxfUEFUSD0iJHtXT1JLU1BBQ0VTX0lNQUdFU19VUkxfUEFUSDotfSIKZGVjbGFyZSAtcnggV09SS1NQQUNFU19JTUFHRVNfVVJMX0JPVU5EPSIke1dPUktTUEFDRVNfSU1BR0VTX1VSTF9CT1VORDotfSIKCmRlY2xhcmUgLXJ4IFJFU1VMVFNfU09VUkNFX0RJR0VTVF9QQVRIPSIke1JFU1VMVFNfU09VUkNFX0RJR0VTVF9QQVRIOi19IgpkZWNsYXJlIC1yeCBSRVNVTFRTX0RFU1RJTkFUSU9OX0RJR0VTVF9QQVRIPSIke1JFU1VMVFNfREVTVElOQVRJT05fRElHRVNUX1BBVEg6LX0iCgojCiMgQXNzZXJ0aW5nIEVudmlyb25tZW50CiMKCmV4cG9ydGVkX29yX2ZhaWwgXAogICAgUkVTVUxUU19TT1VSQ0VfRElHRVNUX1BBVEggXAogICAgUkVTVUxUU19ERVNUSU5BVElPTl9ESUdFU1RfUEFUSAoKCiMKIyBTa29wZW8gQXV0aGVudGljYXRpb24KIwoKZGVjbGFyZSAteCBSRUdJU1RSWV9BVVRIX0ZJTEU9IiIKCmRvY2tlcl9jb25maWc9Ii93b3Jrc3BhY2UvaG9tZS8uZG9ja2VyL2NvbmZpZy5qc29uIgppZiBbWyAtZiAiJHtkb2NrZXJfY29uZmlnfSIgXV07IHRoZW4KICAgIHBoYXNlICJTZXR0aW5nIFJFR0lTVFJZX0FVVEhfRklMRSB0byAnJHtkb2NrZXJfY29uZmlnfSciCiAgICBSRUdJU1RSWV9BVVRIX0ZJTEU9JHtkb2NrZXJfY29uZmlnfQpmaQoKIwojIFZlcmJvc2UgT3V0cHV0CiMKCmRlY2xhcmUgLXggU0tPUEVPX0RFQlVHX0ZMQUc9IiIKCmlmIFtbICIke1BBUkFNU19WRVJCT1NFfSIgPT0gInRydWUiIF1dOyB0aGVuCiAgICBTS09QRU9fREVCVUdfRkxBRz0iLS1kZWJ1ZyIKICAgIHNldCAteApmaQo=" |base64 -d >"/scripts/skopeo-common.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKc2hvcHQgLXMgaW5oZXJpdF9lcnJleGl0CnNldCAtZXUgLW8gcGlwZWZhaWwKCnNvdXJjZSAiJChkaXJuYW1lICIke0JBU0hfU09VUkNFWzBdfSIpL2NvbW1vbi5zaCIKc291cmNlICIkKGRpcm5hbWUgIiR7QkFTSF9TT1VSQ0VbMF19Iikvc2tvcGVvLWNvbW1vbi5zaCIKCiMgRW5zdXJlIHRoZSAvdGVrdG9uL2hvbWUvLmRvY2tlciBkaXJlY3RvcnkgZXhpc3RzCm1rZGlyIC1wIC93b3Jrc3BhY2UvaG9tZS8uZG9ja2VyCgpzZXQgLXgKCmlmIFsgLW4gIiR7UEFSQU1TX1NPVVJDRV9JTUFHRV9VUkx9IiBdICYmIFsgLW4gIiR7UEFSQU1TX0RFU1RJTkFUSU9OX0lNQUdFX1VSTH0iIF07IHRoZW4KICAgIHBoYXNlICJDb3B5aW5nICcke1BBUkFNU19TT1VSQ0VfSU1BR0VfVVJMfScgaW50byAnJHtQQVJBTVNfREVTVElOQVRJT05fSU1BR0VfVVJMfSciCiAgICBza29wZW8gY29weSAke1NLT1BFT19ERUJVR19GTEFHfSBcCiAgICAgICAgLS1zcmMtdGxzLXZlcmlmeT0iJHtQQVJBTVNfU1JDX1RMU19WRVJJRll9IiBcCiAgICAgICAgLS1kZXN0LXRscy12ZXJpZnk9IiR7UEFSQU1TX0RFU1RfVExTX1ZFUklGWX0iIFwKICAgICAgICAke1BBUkFNU19BUkdTOiske1BBUkFNU19BUkdTfX0gXAogICAgICAgICIke1BBUkFNU19TT1VSQ0VfSU1BR0VfVVJMfSIgXAogICAgICAgICIke1BBUkFNU19ERVNUSU5BVElPTl9JTUFHRV9VUkx9IgplbGlmIFsgIiR7V09SS1NQQUNFU19JTUFHRVNfVVJMX0JPVU5EfSIgPT0gInRydWUiIF07IHRoZW4KICAgIHBoYXNlICJDb3B5aW5nIHVzaW5nIHVybC50eHQgZmlsZSIKICAgICMgRnVuY3Rpb24gdG8gY29weSBtdWx0aXBsZSBpbWFnZXMuCiAgICBjb3B5aW1hZ2VzKCkgewogICAgICAgIGZpbGVuYW1lPSIke1dPUktTUEFDRVNfSU1BR0VTX1VSTF9QQVRIfS91cmwudHh0IgogICAgICAgIFtbICEgLWYgIiR7ZmlsZW5hbWV9IiBdXSAmJiBmYWlsICJ1cmwudHh0IGZpbGUgbm90IGZvdW5kIGF0OiAnJHtmaWxlbmFtZX0nIgogICAgICAgIHdoaWxlIElGUz0gcmVhZCAtciBsaW5lIHx8IFsgLW4gIiRsaW5lIiBdCiAgICAgICAgZG8KICAgICAgICAgICAgcmVhZCAtcmEgU09VUkNFIDw8PCIke2xpbmV9IgogICAgICAgICAgICBza29wZW8gY29weSAiJHtTT1VSQ0VbQF19IiAke1NLT1BFT19ERUJVR19GTEFHfSAtLXNyYy10bHMtdmVyaWZ5PSIke1BBUkFNU19TUkNfVExTX1ZFUklGWX0iIC0tZGVzdC10bHMtdmVyaWZ5PSIke1BBUkFNU19ERVNUX1RMU19WRVJJRll9IiAke1BBUkFNU19BUkdTOiske1BBUkFNU19BUkdTfX0KICAgICAgICAgICAgZWNobyAiJGxpbmUiCiAgICAgICAgZG9uZSA8ICIkZmlsZW5hbWUiCiAgICB9CgogICAgY29weWltYWdlcwplbHNlCiAgZmFpbCAiTmVpdGhlciBTb3VyY2UvRGVzdGluYXRpb24gaW1hZ2UgVVJMIHBhcmFtZXRlcnMgbm9yIHdvcmtzcGFjZSBpbWFnZXNfdXJsIHByb3ZpZGVkIgpmaQo=" |base64 -d >"/scripts/skopeo-copy.sh"
+        printf '%s' "IyEvdXNyL2Jpbi9lbnYgYmFzaAoKc2hvcHQgLXMgaW5oZXJpdF9lcnJleGl0CnNldCAtZXUgLW8gcGlwZWZhaWwKCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS9jb21tb24uc2giCnNvdXJjZSAiJChkaXJuYW1lICR7QkFTSF9TT1VSQ0VbMF19KS9za29wZW8tY29tbW9uLnNoIgoKZnVuY3Rpb24gc2tvcGVvX2luc3BlY3QoKSB7CiAgICBsb2NhbCBpbWFnZT0iJDEiCiAgICBsb2NhbCB0bHNfdmVyaWZ5PSIkMiIKICAgIHNrb3BlbyBpbnNwZWN0ICR7U0tPUEVPX0RFQlVHX0ZMQUd9IFwKICAgICAgICAtLXRscy12ZXJpZnk9IiR7dGxzX3ZlcmlmeX0iIFwKICAgICAgICAtLWZvcm1hdD0ne3sgLkRpZ2VzdCB9fScgXAogICAgICAgICIke2ltYWdlfSIKfQoKaWYgWyAtbiAiJHtQQVJBTVNfU09VUkNFX0lNQUdFX1VSTH0iIF0gJiYgWyAtbiAiJHtQQVJBTVNfREVTVElOQVRJT05fSU1BR0VfVVJMfSIgXTsgdGhlbgogICAgcGhhc2UgIkV4dHJhY3RpbmcgJyR7UEFSQU1TX1NPVVJDRV9JTUFHRV9VUkx9JyBzb3VyY2UgaW1hZ2UgZGlnZXN0IgogICAgc291cmNlX2RpZ2VzdD0iJChza29wZW9faW5zcGVjdCAiJHtQQVJBTVNfU09VUkNFX0lNQUdFX1VSTH0iICIke1BBUkFNU19TUkNfVExTX1ZFUklGWX0iKSIKICAgIHBoYXNlICJTb3VyY2UgaW1hZ2UgZGlnZXN0ICcke3NvdXJjZV9kaWdlc3R9JyIKCiAgICBwaGFzZSAiRXh0cmFjdGluZyAnJHtQQVJBTVNfREVTVElOQVRJT05fSU1BR0VfVVJMfScgZGVzdGluYXRpb24gaW1hZ2UgZGlnZXN0IgogICAgZGVzdGluYXRpb25fZGlnZXN0PSIkKHNrb3Blb19pbnNwZWN0ICIke1BBUkFNU19ERVNUSU5BVElPTl9JTUFHRV9VUkx9IiAiJHtQQVJBTVNfREVTVF9UTFNfVkVSSUZZfSIpIgogICAgcGhhc2UgIkRlc3RpbmF0aW9uIGltYWdlIGRpZ2VzdCAnJHtkZXN0aW5hdGlvbl9kaWdlc3R9JyIKZWxzZQogICAgcGhhc2UgIkV4dHJhY3Rpbmcgc291cmNlIGFuZCBkZXN0aW5hdGlvbiBpbWFnZSBkaWdlc3RzIGZvciBpbWFnZXMgZnJvbSB1cmwudHh0IGZpbGUiCiAgICBmaWxlbmFtZT0iJHtXT1JLU1BBQ0VTX0lNQUdFU19VUkxfUEFUSH0vdXJsLnR4dCIKICAgIHNvdXJjZV9kaWdlc3Q9IiIKICAgIGRlc3RpbmF0aW9uX2RpZ2VzdD0iIgogICAgd2hpbGUgSUZTPSByZWFkIC1yIGxpbmUgfHwgWyAtbiAiJGxpbmUiIF0KICAgIGRvCiAgICAgICAgcmVhZCAtcmEgU09VUkNFIDw8PCIke2xpbmV9IgogICAgICAgIHNvdXJjZV9kaWdlc3Q9IiRzb3VyY2VfZGlnZXN0ICQoc2tvcGVvX2luc3BlY3QgJHtTT1VSQ0VbMF19ICR7UEFSQU1TX1NSQ19UTFNfVkVSSUZZfSkiCiAgICAgICAgZGVzdGluYXRpb25fZGlnZXN0PSIkZGVzdGluYXRpb25fZGlnZXN0ICQoc2tvcGVvX2luc3BlY3QgJHtTT1VSQ0VbMV19ICR7UEFSQU1TX0RFU1RfVExTX1ZFUklGWX0pIgogICAgZG9uZSA8ICIkZmlsZW5hbWUiCiAgICAjIFJlbW92ZSB3aGl0ZXNwYWNlIGZyb20gdGhlIHN0YXJ0CiAgICBzb3VyY2VfZGlnZXN0PSIke3NvdXJjZV9kaWdlc3QjIH0iCiAgICBkZXN0aW5hdGlvbl9kaWdlc3Q9IiR7ZGVzdGluYXRpb25fZGlnZXN0IyB9IgogICAgcGhhc2UgIlNvdXJjZSBpbWFnZSBkaWdlc3RzICcke3NvdXJjZV9kaWdlc3R9JyIKICAgIHBoYXNlICJEZXN0aW5hdGlvbiBpbWFnZSBkaWdlc3RzICcke2Rlc3RpbmF0aW9uX2RpZ2VzdH0nIgpmaQoKcHJpbnRmICIlcyIgIiR7c291cmNlX2RpZ2VzdH0iID4gIiR7UkVTVUxUU19TT1VSQ0VfRElHRVNUX1BBVEh9IgpwcmludGYgIiVzIiAiJHtkZXN0aW5hdGlvbl9kaWdlc3R9IiA+ICIke1JFU1VMVFNfREVTVElOQVRJT05fRElHRVNUX1BBVEh9Igo=" |base64 -d >"/scripts/skopeo-results.sh"
+        ls /scripts/skopeo-*.sh;
+        chmod +x /scripts/skopeo-*.sh;echo "Running Script /scripts/skopeo-copy.sh";
+          /scripts/skopeo-copy.sh "$@";echo "Running Script /scripts/skopeo-results.sh";
+          /scripts/skopeo-results.sh "$@";
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
