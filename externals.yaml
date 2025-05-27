@@ -31,3 +31,4 @@ repositories:
 - url: https://github.com/redhat-developer/dotnet-tekton-tasks
   types:
   - tasks
+  ignore-versions: [ "v0.1.0" ]
