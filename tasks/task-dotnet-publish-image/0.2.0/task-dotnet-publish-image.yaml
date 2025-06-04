@@ -3,7 +3,7 @@ kind: Task
 metadata:
   name: dotnet-publish-image
   labels:
-    app.kubernetes.io/version: 0.1.0
+    app.kubernetes.io/version: 0.2.0
   annotations:
     tekton.dev/source: "https://github.com/redhat-developer/dotnet-tekton-tasks"
     artifacthub.io/category: integration-delivery
