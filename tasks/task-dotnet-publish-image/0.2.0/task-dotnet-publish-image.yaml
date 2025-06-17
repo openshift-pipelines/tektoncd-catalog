@@ -9,6 +9,7 @@ metadata:
     artifacthub.io/category: integration-delivery
     artifacthub.io/maintainers: |
       - name: Red Hat
+        email: dotnet-team@redhat.com
     artifacthub.io/provider: Red Hat
     artifacthub.io/recommendations: |
       - url: https://tekton.dev/
