@@ -17,7 +17,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
       - uses: openshift-pipelines/catalog-cd/actions/setup-catalog-cd@main
       - id: set-matrix
         name: Generate catalog matrix
@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix: ${{fromJSON(needs.experimental-catalog-matrix.outputs.matrix)}}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
       - uses: openshift-pipelines/catalog-cd/actions/setup-catalog-cd@main
       - name: ${{ matrix.type }} catalog for ${{ matrix.name }}
         env:
@@ -48,7 +48,7 @@ jobs:
                  --ignore-versions "${{ matrix.ignoreVersions }}" \
                  experimental
       - name: Checkout "p" publish branch
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
         with:
           repository: openshift-pipelines/tektoncd-catalog
           ref: p
