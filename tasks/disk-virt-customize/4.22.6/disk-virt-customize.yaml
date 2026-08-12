@@ -40,7 +40,7 @@ spec:
       default: ""
   steps:
     - name: run-virt-customize
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:63f3ff508b5846d1b3fe29601b8a1d0766b14fdb501e0aa687e39c9eb6e01210:v4.22.6"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:63f3ff508b5846d1b3fe29601b8a1d0766b14fdb501e0aa687e39c9eb6e01210"
       command:
         - entrypoint
       args:

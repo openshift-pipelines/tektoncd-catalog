@@ -48,7 +48,7 @@ spec:
       description: The digest from the build of the containerDisk.
   steps:
   - name: disk-uploader-step
-    image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:53905558ab2d9d002b62551a4111ce995c6835a73f1039e257abf943b6e8ac32:v4.21.16"
+    image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:53905558ab2d9d002b62551a4111ce995c6835a73f1039e257abf943b6e8ac32"
     env:
     - name: ACCESS_KEY_ID
       valueFrom:
