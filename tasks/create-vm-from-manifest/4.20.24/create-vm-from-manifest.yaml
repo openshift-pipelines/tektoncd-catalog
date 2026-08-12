@@ -56,7 +56,7 @@ spec:
       description: The namespace of a VM that was created.
   steps:
     - name: createvm
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:b986dc07681bb7d50515db6d5f639a79eeac375768541f5342727b55cbcc6d4a:v4.20.24"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:b986dc07681bb7d50515db6d5f639a79eeac375768541f5342727b55cbcc6d4a"
       command:
         - create-vm
       args:

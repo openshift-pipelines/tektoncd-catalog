@@ -40,7 +40,7 @@ spec:
       description: A label selector expression to decide if the VirtualMachineInstance (VMI) is in a failed state. Eg. "status.phase in (Failed, Unknown)". It is evaluated on each VMI update and will result in this task failing if true.
   steps:
     - name: wait-for-vmi-status
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:d2b0064c01329a6d73ac13774284418af730ec46688b7620e1902368153b9c3b:v4.22.6"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:d2b0064c01329a6d73ac13774284418af730ec46688b7620e1902368153b9c3b"
       command:
         - entrypoint
       env:

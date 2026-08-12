@@ -43,7 +43,7 @@ spec:
           - "ALL"
         seccompProfile:
           type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:c7d1704778917784f2d66e2eb36d1dae05335b24acca026bfd7d25f14643e721:v4.19.33"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:c7d1704778917784f2d66e2eb36d1dae05335b24acca026bfd7d25f14643e721"
       script: |
         #!/bin/bash
         set -x
@@ -94,7 +94,7 @@ spec:
           - "ALL"
         seccompProfile:
           type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:b4b66be141325e17dea6ed602201df9a1bad3fcba75bc62929d4384fc179e0cb:v4.19.33"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:b4b66be141325e17dea6ed602201df9a1bad3fcba75bc62929d4384fc179e0cb"
       script: |
         #!/bin/bash
         set -ex
@@ -124,7 +124,7 @@ spec:
           - "ALL"
         seccompProfile:
           type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:c7d1704778917784f2d66e2eb36d1dae05335b24acca026bfd7d25f14643e721:v4.19.33"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:c7d1704778917784f2d66e2eb36d1dae05335b24acca026bfd7d25f14643e721"
       script: |
         #!/bin/bash
         set -x
