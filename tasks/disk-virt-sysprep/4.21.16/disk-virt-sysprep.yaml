@@ -7,7 +7,7 @@ metadata:
     tekton.dev/pipelines.minVersion: "0.43.0"
     tekton.dev/categories: Automation
     tekton.dev/tags: kubevirt
-    tekton.dev/displayName: "OpenShift Virtualization disk virt customize"
+    tekton.dev/displayName: "OpenShift Virtualization disk virt sysprep"
     tekton.dev/platforms: "linux/amd64,linux/arm64,linux/s390x"
     artifacthub.io/maintainers: |
       - name: KubeVirt Tekton tasks maintainers
@@ -17,17 +17,17 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.22.0
-  name: disk-virt-customize
+    app.kubernetes.io/version: v4.21.16
+  name: disk-virt-sysprep
 spec:
   description: >-
-    Run virt-customize command on given PVC. Usefull for manipulation with virtual machine's disks.
+    Run virt-sysprep command on given PVC. Usefull for manipulation with virtual machine's disks.
   params:
     - name: pvc
-      description: PersistentVolumeClaim to run the the virt-customize script in. PVC should be in the same namespace as taskrun/pipelinerun.
+      description: PersistentVolumeClaim to run the the virt-sysprep script in. PVC should be in the same namespace as taskrun/pipelinerun.
       type: string
     - name: virtCommands
-      description: virt-customize commands in "--commands-from-file" format.
+      description: virt-sysprep commands in "--commands-from-file" format.
       type: string
       default: ""
     - name: verbose
@@ -35,12 +35,12 @@ spec:
       type: string
       default: 'false'
     - name: additionalVirtOptions
-      description: Additional options to pass to virt-customize.
+      description: Additional options to pass to virt-sysprep.
       type: string
       default: ""
   steps:
-    - name: run-virt-customize
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:ee414def9de255364cd69877cf2ccf8129b1db73173479e4085aa3da84821752:v4.22.0"
+    - name: run-virt-sysprep
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:3564d1bef0c5cdfe26590f1df542c6096cc8e4aa8fd224d9d1b68f758a66d478:v4.21.16"
       command:
         - entrypoint
       args:
@@ -48,7 +48,7 @@ spec:
         - $(params.verbose)
       env:
         - name: COMMAND
-          value: disk-virt-customize
+          value: disk-virt-sysprep
         - name: VIRT_COMMANDS
           value: $(params.virtCommands)
         - name: ADDITIONAL_VIRT_OPTIONS

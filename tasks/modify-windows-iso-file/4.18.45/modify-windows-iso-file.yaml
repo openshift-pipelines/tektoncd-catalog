@@ -17,7 +17,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.22.0
+    app.kubernetes.io/version: v4.18.45
   name: modify-windows-iso-file
 spec:
   description: >-
@@ -36,14 +36,11 @@ spec:
   steps:
     - name: modify-iso-file
       securityContext:
-        runAsNonRoot: true
         allowPrivilegeEscalation: false
         capabilities:
           drop:
           - "ALL"
-        seccompProfile:
-          type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:ee414def9de255364cd69877cf2ccf8129b1db73173479e4085aa3da84821752:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:1808964d7d5c22a5295fa4e8b6a04737718b955cc9f90adff54dedeeb394fca5:v4.18.45"
       script: |
         #!/bin/bash
         set -x
@@ -87,14 +84,11 @@ spec:
           name: extracted-iso-files
     - name: create-iso-file
       securityContext:
-        runAsNonRoot: true
         allowPrivilegeEscalation: false
         capabilities:
           drop:
           - "ALL"
-        seccompProfile:
-          type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:aa10d87ad14e56d2b1a7d72ddfe37aaa2df17f7e7cbd4015d21efcaa9cdc7d73:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:f55e932054b3dff4f7e66ea45d1bbc3c18d9160ee3a1de1d47f0f5eb95d6e891:v4.18.45"
       script: |
         #!/bin/bash
         set -ex
@@ -117,14 +111,11 @@ spec:
           name: iso-file
     - name: convert-iso-file
       securityContext:
-        runAsNonRoot: true
         allowPrivilegeEscalation: false
         capabilities:
           drop:
           - "ALL"
-        seccompProfile:
-          type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:ee414def9de255364cd69877cf2ccf8129b1db73173479e4085aa3da84821752:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:1808964d7d5c22a5295fa4e8b6a04737718b955cc9f90adff54dedeeb394fca5:v4.18.45"
       script: |
         #!/bin/bash
         set -x

@@ -17,7 +17,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.22.0
+    app.kubernetes.io/version: v4.22.6
   name: disk-virt-customize
 spec:
   description: >-
@@ -40,7 +40,7 @@ spec:
       default: ""
   steps:
     - name: run-virt-customize
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:ee414def9de255364cd69877cf2ccf8129b1db73173479e4085aa3da84821752:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:63f3ff508b5846d1b3fe29601b8a1d0766b14fdb501e0aa687e39c9eb6e01210:v4.22.6"
       command:
         - entrypoint
       args:

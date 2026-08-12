@@ -8,7 +8,7 @@ metadata:
     tekton.dev/categories: Automation
     tekton.dev/tags: kubevirt
     tekton.dev/displayName: "OpenShift Virtualization modify data object"
-    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/arm64"
+    tekton.dev/platforms: "linux/amd64"
     artifacthub.io/maintainers: |
       - name: KubeVirt Tekton tasks maintainers
         email: kubevirt-tekton-tasks@redhat.com
@@ -17,7 +17,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.22.0
+    app.kubernetes.io/version: v4.18.45
   name: modify-data-object
 spec:
   description: >-
@@ -66,7 +66,7 @@ spec:
       description: The namespace of the data object that was created.
   steps:
     - name: modify-data-object
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:aa10d87ad14e56d2b1a7d72ddfe37aaa2df17f7e7cbd4015d21efcaa9cdc7d73:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:f55e932054b3dff4f7e66ea45d1bbc3c18d9160ee3a1de1d47f0f5eb95d6e891:v4.18.45"
       command:
         - modify-data-object
       args:
@@ -98,11 +98,3 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-      securityContext:
-        runAsNonRoot: true
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-          - "ALL"
-        seccompProfile:
-          type: RuntimeDefault

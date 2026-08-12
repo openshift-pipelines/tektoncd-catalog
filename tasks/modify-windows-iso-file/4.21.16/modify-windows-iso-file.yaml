@@ -17,7 +17,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.22.0
+    app.kubernetes.io/version: v4.21.16
   name: modify-windows-iso-file
 spec:
   description: >-
@@ -43,7 +43,7 @@ spec:
           - "ALL"
         seccompProfile:
           type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:ee414def9de255364cd69877cf2ccf8129b1db73173479e4085aa3da84821752:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:3564d1bef0c5cdfe26590f1df542c6096cc8e4aa8fd224d9d1b68f758a66d478:v4.21.16"
       script: |
         #!/bin/bash
         set -x
@@ -94,7 +94,7 @@ spec:
           - "ALL"
         seccompProfile:
           type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:aa10d87ad14e56d2b1a7d72ddfe37aaa2df17f7e7cbd4015d21efcaa9cdc7d73:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-create-datavolume-rhel9@sha256:53905558ab2d9d002b62551a4111ce995c6835a73f1039e257abf943b6e8ac32:v4.21.16"
       script: |
         #!/bin/bash
         set -ex
@@ -124,7 +124,7 @@ spec:
           - "ALL"
         seccompProfile:
           type: RuntimeDefault
-      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:ee414def9de255364cd69877cf2ccf8129b1db73173479e4085aa3da84821752:v4.22.0"
+      image: "registry.redhat.io/container-native-virtualization/kubevirt-tekton-tasks-disk-virt-customize-rhel9@sha256:3564d1bef0c5cdfe26590f1df542c6096cc8e4aa8fd224d9d1b68f758a66d478:v4.21.16"
       script: |
         #!/bin/bash
         set -x
