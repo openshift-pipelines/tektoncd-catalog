@@ -17,7 +17,7 @@ metadata:
       - url: https://kubevirt.io/
     artifacthub.io/category: integration-delivery
   labels:
-    app.kubernetes.io/version: v4.22.0
+    app.kubernetes.io/version: v4.19.33
   name: windows-efi-installer
 spec:
   description: >-
@@ -56,7 +56,7 @@ spec:
       description: Name of the ConfigMap containing the sysprep configuration files (autounattend.xml, etc.). For example windows11-autounattend, windows10-efi-autounattend or windows2022-autounattend. It is possible to provide customize ConfigMaps created by the user too.
       name: autounattendConfigMapName
       type: string
-    - default: registry.redhat.io/container-native-virtualization/virtio-win-rhel9@sha256:7e06e1f52a434d4602657c920144504fbaed955d0998535bdf345716355ce83a
+    - default: registry.redhat.io/container-native-virtualization/virtio-win-rhel9@sha256:58960525dc1e6c970ea52731d5af70a9734d0120628476ac29020b170d8325f7
       description: Reference to the containerdisk containing the virtio-win drivers ISO.
       name: virtioContainerDiskName
       type: string
@@ -136,7 +136,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: v4.22.0
+            value: v4.19.33
     - name: modify-windows-iso-file
       when:
         - input: "$(params.useBiosMode)"
@@ -160,7 +160,7 @@ spec:
           - name: name
             value: modify-windows-iso-file
           - name: version
-            value: v4.22.0
+            value: v4.19.33
     - name: create-vm-root-disk
       runAfter:
         - import-autounattend-configmaps
@@ -176,7 +176,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: v4.22.0
+            value: v4.19.33
       params:
         - name: manifest
           value: |-
@@ -267,7 +267,7 @@ spec:
           - name: name
             value: create-vm-from-manifest
           - name: version
-            value: v4.22.0
+            value: v4.19.33
     - name: wait-for-vmi-status
       params:
         - name: vmiName
@@ -292,7 +292,7 @@ spec:
           - name: name
             value: wait-for-vmi-status
           - name: version
-            value: v4.22.0
+            value: v4.19.33
       timeout: 2h0m0s
     - name: create-datasource-root-disk
       runAfter:
@@ -309,7 +309,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: v4.22.0
+            value: v4.19.33
       params:
         - name: manifest
           value: |-
@@ -353,7 +353,7 @@ spec:
           - name: name
             value: cleanup-vm
           - name: version
-            value: v4.22.0
+            value: v4.19.33
       timeout: 10m0s
     - name: delete-imported-iso
       params:
@@ -377,7 +377,7 @@ spec:
           - name: name
             value: modify-data-object
           - name: version
-            value: v4.22.0
+            value: v4.19.33
     - name: delete-imported-configmaps
       params:
         - name: SCRIPT
